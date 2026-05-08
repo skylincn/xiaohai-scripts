@@ -1,586 +1,18 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    <link rel="icon" type="image/png" href="/msc_logo.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MSC·幻天屿 - 表情包生成</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            --bg-dark: #0a0a0f;
-            --bg-card: #12121a;
-            --neon-cyan: #00f0ff;
-            --neon-pink: #ff00aa;
-            --neon-purple: #b967ff;
-            --neon-green: #39ff14;
-            --text-main: #e0e0e0;
-            --text-dim: #888;
-            --border: #1e1e2e;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-main);
-            min-height: 100vh;
-        }
-        .header {
-            display: flex;
-            align-items: center;
-            padding: 16px 24px;
-            border-bottom: 1px solid var(--border);
-            gap: 12px;
-        }
-        .logo-text {
-            font-size: 20px;
-            font-weight: 600;
-            background: linear-gradient(90deg, var(--neon-pink), var(--neon-purple));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 32px 24px;
-        }
-        .login-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(10, 10, 15, 0.95);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-        .login-overlay.hidden { display: none; }
-        .login-box {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 32px;
-            width: 320px;
-        }
-        .login-box h2 {
-            text-align: center;
-            margin-bottom: 24px;
-            font-size: 18px;
-            color: var(--neon-pink);
-        }
-        .login-box input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 12px;
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-main);
-            font-size: 14px;
-        }
-        .login-box input:focus { outline: none; border-color: var(--neon-pink); }
-        .login-box button {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(90deg, var(--neon-pink), var(--neon-purple));
-            border: none;
-            border-radius: 8px;
-            color: #000;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .login-error {
-            color: #ff6b6b;
-            margin-top: 12px;
-            display: none;
-            text-align: center;
-        }
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 20px;
-        }
-        .section-title {
-            font-size: 14px;
-            color: var(--text-dim);
-            margin-bottom: 12px;
-        }
-        .tab-nav {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        .tab-btn {
-            padding: 10px 20px;
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-dim);
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .tab-btn:hover, .tab-btn.active {
-            border-color: var(--neon-pink);
-            color: var(--neon-pink);
-        }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        textarea, input[type="text"] {
-            width: 100%;
-            padding: 12px 16px;
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-main);
-            font-size: 14px;
-            font-family: inherit;
-        }
-        textarea { min-height: 80px; resize: vertical; }
-        textarea:focus, input:focus { outline: none; border-color: var(--neon-pink); }
-        .style-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-            gap: 8px;
-            margin-top: 12px;
-        }
-        .style-btn {
-            padding: 8px 12px;
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text-dim);
-            font-size: 12px;
-            cursor: pointer;
-            text-align: center;
-        }
-        .style-btn:hover, .style-btn.active {
-            border-color: var(--neon-pink);
-            color: var(--neon-pink);
-        }
-        .size-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        .size-tabs button {
-            padding: 8px 16px;
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text-dim);
-            font-size: 13px;
-            cursor: pointer;
-        }
-        .size-tabs button.active {
-            background: var(--neon-purple);
-            border-color: var(--neon-purple);
-            color: #000;
-        }
-        .settings-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 16px;
-            margin-top: 16px;
-        }
-        .setting-item label {
-            display: block;
-            font-size: 12px;
-            color: var(--text-dim);
-            margin-bottom: 6px;
-        }
-        .setting-item select {
-            width: 100%;
-            padding: 10px 12px;
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text-main);
-            font-size: 13px;
-        }
-        .file-input-wrapper input[type="file"] {
-            width: 100%;
-            padding: 12px;
-            background: var(--bg-dark);
-            border: 2px dashed var(--border);
-            border-radius: 8px;
-            color: var(--text-dim);
-            cursor: pointer;
-        }
-        .file-preview {
-            margin-top: 12px;
-            display: none;
-        }
-        .file-preview img {
-            max-width: 200px;
-            border-radius: 8px;
-            border: 2px solid var(--neon-purple);
-        }
-        .sticker-grid {
-            display: grid;
-            gap: 12px;
-            margin-top: 16px;
-        }
-        .sticker-grid.size-4 { grid-template-columns: repeat(2, 1fr); }
-        .sticker-grid.size-8 { grid-template-columns: repeat(4, 1fr); }
-        .sticker-grid.size-9 { grid-template-columns: repeat(3, 1fr); }
-        .sticker-grid.size-16 { grid-template-columns: repeat(4, 1fr); }
-        .sticker-cell {
-            aspect-ratio: 1;
-            background: var(--bg-dark);
-            border: 2px dashed var(--border);
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s;
-        }
-        .sticker-cell:hover {
-            border-color: var(--neon-cyan);
-        }
-        .sticker-cell.has-image {
-            border-style: solid;
-            border-color: var(--neon-green);
-        }
-        .cell-num {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            background: rgba(0,0,0,0.7);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            color: var(--neon-cyan);
-        }
-        .cell-placeholder { font-size: 24px; color: var(--text-dim); }
-        .cell-img { width: 100%; height: 100%; object-fit: cover; }
-        .cell-actions {
-            position: absolute;
-            bottom: 8px;
-            right: 8px;
-            display: flex;
-            gap: 4px;
-        }
-        .cell-actions button {
-            background: rgba(0,0,0,0.8);
-            border: 1px solid var(--neon-pink);
-            color: var(--neon-pink);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            cursor: pointer;
-        }
-        .generate-btn {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(90deg, var(--neon-pink), var(--neon-purple));
-            border: none;
-            border-radius: 10px;
-            color: #000;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin: 20px 0;
-        }
-        .generate-btn:hover { opacity: 0.9; }
-        .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .progress-bar {
-            height: 4px;
-            background: var(--bg-dark);
-            border-radius: 2px;
-            margin: 16px 0;
-            overflow: hidden;
-            display: none;
-        }
-        .progress-bar.active { display: block; }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--neon-pink), var(--neon-purple));
-            width: 0%;
-            transition: width 0.3s;
-        }
-        .text-edit-panel {
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 16px;
-            display: none;
-        }
-        .text-edit-panel.active { display: block; }
-        .text-edit-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-        .text-edit-row label {
-            min-width: 80px;
-            font-size: 12px;
-            color: var(--text-dim);
-        }
-        .text-edit-row input[type="range"] { flex: 1; }
-        .export-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 12px;
-            margin-top: 16px;
-        }
-        .export-item {
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            overflow: hidden;
-            text-align: center;
-        }
-        .export-item img {
-            width: 100%;
-            aspect-ratio: 1;
-            object-fit: cover;
-        }
-        .export-label {
-            padding: 8px;
-            font-size: 11px;
-            color: var(--neon-cyan);
-        }
-        .settings-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-top: 16px;
-            flex-wrap: wrap;
-        }
-        .settings-row label {
-            font-size: 13px;
-            color: var(--text-dim);
-        }
-        .settings-row input {
-            flex: 1;
-            min-width: 200px;
-            padding: 10px 12px;
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text-main);
-            font-size: 13px;
-        }
-        .log-area {
-            max-height: 150px;
-            overflow-y: auto;
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 12px;
-            font-family: monospace;
-            font-size: 11px;
-            margin-top: 16px;
-        }
-        .log-line { padding: 4px 0; }
-        .log-line.success { color: var(--neon-green); }
-        .log-line.error { color: #ff6b6b; }
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(10, 10, 15, 0.95);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 999;
-        }
-        .modal-overlay.active { display: flex; }
-        .modal-overlay img {
-            max-width: 90%;
-            max-height: 90%;
-            border-radius: 12px;
-            box-shadow: 0 0 40px rgba(255, 0, 170, 0.3);
-        }
-        .modal-close {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: transparent;
-            border: 2px solid var(--neon-pink);
-            color: var(--neon-pink);
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            font-size: 20px;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-    <div class="login-overlay" id="loginOverlay">
-        <div class="login-box">
-            <h2>🎭 MSC·幻天屿</h2>
-            <input type="text" id="loginUser" placeholder="用户名">
-            <input type="password" id="loginPass" placeholder="密码">
-            <button onclick="doLogin()">登录</button>
-            <div class="login-error" id="loginError">用户名或密码错误</div>
-        </div>
-    </div>
-
-    <header class="header">
-        <span class="logo-text">MSC·幻天屿</span>
-    </header>
-
-    <main class="container">
-        <div class="tab-nav">
-            <button class="tab-btn active" data-tab="batch">批量生成</button>
-            <button class="tab-btn" data-tab="style">风格转换</button>
-            <button class="tab-btn" data-tab="text">文字编辑</button>
-            <button class="tab-btn" data-tab="export">导出</button>
-        </div>
-
-        <!-- 批量生成 -->
-        <div class="tab-content active" id="tab-batch">
-            <div class="card">
-                <div class="section-title">表情包批量生成</div>
-                <div class="size-tabs">
-                    <button data-size="4">4格</button>
-                    <button data-size="8" class="active">8格</button>
-                    <button data-size="9">9格</button>
-                    <button data-size="16">16格</button>
-                </div>
-                <div style="margin-bottom:16px;">
-                    <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px;">角色描述</label>
-                    <input type="text" id="mainPrompt" placeholder="如：一只可爱的小白兔，圆滚滚的身体">
-                </div>
-                <div style="margin-bottom:16px;">
-                    <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px;">表情列表（逗号分隔）</label>
-                    <input type="text" id="expressionPrompt" placeholder="如：开心,生气,哭泣,惊讶,害羞,睡觉,吃瓜,疑惑">
-                </div>
-                <div class="settings-grid">
-                    <div class="setting-item">
-                        <label>风格</label>
-                        <select id="styleSelect">
-                            <option value="可爱卡通">可爱卡通</option>
-                            <option value="简约线条">简约线条</option>
-                            <option value="像素风">像素风</option>
-                            <option value="水彩风">水彩风</option>
-                        </select>
-                    </div>
-                    <div class="setting-item">
-                        <label>背景</label>
-                        <select id="bgSelect">
-                            <option value="透明背景">透明背景</option>
-                            <option value="白色背景">白色背景</option>
-                            <option value="渐变背景">渐变背景</option>
-                        </select>
-                    </div>
-                </div>
-                <button class="generate-btn" onclick="generateBatch()">🚀 开始生成</button>
-                <div class="progress-bar" id="batchProgress">
-                    <div class="progress-fill" id="batchProgressFill"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 风格转换 -->
-        <div class="tab-content" id="tab-style">
-            <div class="card">
-                <div class="section-title">风格转换</div>
-                <div class="file-input-wrapper">
-                    <input type="file" id="styleImage" accept="image/*" onchange="previewStyleImage(event)">
-                    <div class="file-preview" id="stylePreview">
-                        <img id="stylePreviewImg" alt="预览">
-                    </div>
-                </div>
-                <div style="margin-top:16px;">
-                    <label style="font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px;">转换提示词</label>
-                    <input type="text" id="stylePrompt" value="转换为卡通表情风格，透明背景，高质量">
-                </div>
-                <button class="generate-btn" onclick="convertStyle()">🔄 转换风格</button>
-            </div>
-        </div>
-
-        <!-- 文字编辑 -->
-        <div class="tab-content" id="tab-text">
-            <div class="card">
-                <div class="section-title">点击表情添加文字</div>
-                <div class="sticker-grid size-8" id="textGrid"></div>
-                <div class="text-edit-panel" id="textEditPanel">
-                    <div style="font-size:14px;color:var(--neon-cyan);margin-bottom:12px;">编辑第 <span id="editCellNum">1</span> 格</div>
-                    <div class="text-edit-row">
-                        <label>文字:</label>
-                        <input type="text" id="editText" placeholder="输入文字">
-                    </div>
-                    <div class="text-edit-row">
-                        <label>大小:</label>
-                        <input type="range" id="editFontSize" min="10" max="40" value="20">
-                        <span id="fontSizeVal" style="color:var(--text-dim);font-size:12px;">20px</span>
-                    </div>
-                    <div class="text-edit-row">
-                        <label>颜色:</label>
-                        <input type="color" id="editColor" value="#ffffff" style="width:60px;height:32px;">
-                    </div>
-                    <div style="display:flex;gap:8px;margin-top:12px;">
-                        <button class="style-btn" onclick="applyText()" style="flex:1;">应用</button>
-                        <button class="style-btn" onclick="closeTextEdit()">取消</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 导出 -->
-        <div class="tab-content" id="tab-export">
-            <div class="card">
-                <div class="section-title">导出表情包</div>
-                <div class="settings-grid">
-                    <div class="setting-item">
-                        <label>表情包名称(4字)</label>
-                        <input type="text" id="packName" placeholder="萌兔" maxlength="4" style="width:100%;">
-                    </div>
-                    <div class="setting-item">
-                        <label>表情名称(8字)</label>
-                        <input type="text" id="stickerName" placeholder="可爱小兔子" maxlength="8" style="width:100%;">
-                    </div>
-                </div>
-                <button class="generate-btn" onclick="generateExport()">📦 生成导出</button>
-                <div class="export-grid" id="exportGrid"></div>
-                <div class="log-area" id="exportLog"></div>
-            </div>
-        </div>
-
-        <!-- 预览区 -->
-        <div class="card">
-            <div class="section-title">表情预览</div>
-            <div class="sticker-grid size-8" id="stickerGrid"></div>
-        </div>
-
-        <!-- API 设置 -->
-        <div class="card">
-            <div class="section-title">API 设置</div>
-            <div class="settings-row">
-                <label>Base URL</label>
-                <input type="text" id="baseUrl" placeholder="https://api.example.com/v1">
-            </div>
-            <div class="settings-row" style="margin-top:12px;">
-                <label>API Key</label>
-                <input type="password" id="apiKey" placeholder="输入 API Key">
-                <button class="style-btn" onclick="saveSettings()">保存</button>
-            </div>
-        </div>
-    </main>
-
-    <div class="modal-overlay" id="imageModal" onclick="closeModal()">
-        <button class="modal-close">✕</button>
-        <img id="modalImg" src="" alt="预览">
-    </div>
-
-    <script src="auth.js"></script>
-    <script>
-        // 登录
+    <title>MSC·幻天屿 表情包生成器</title>
+    <script src="https://cdn.tailwindcss.com">
+        // 登录验证
         const VALID_USER = 'admin';
-        const VALID_PASS_HASH = 'eGlhb2hhaXhpYQ==';
+        const VALID_PASS = 'xiaohaixia';
+        const SESSION_KEY = 'msc_logged_in';
         
         function checkLogin() {
-            if (sessionStorage.getItem('msc_logged_in') === '1') {
+            if (sessionStorage.getItem(SESSION_KEY) === '1') {
                 document.getElementById('loginOverlay').classList.add('hidden');
                 return true;
             }
@@ -590,52 +22,349 @@
         function doLogin() {
             const user = document.getElementById('loginUser').value;
             const pass = document.getElementById('loginPass').value;
-            if (user === VALID_USER && pass === atob(VALID_PASS_HASH)) {
-                sessionStorage.setItem('msc_logged_in', '1');
+            if (user === VALID_USER && pass === VALID_PASS) {
+                sessionStorage.setItem(SESSION_KEY, '1');
                 document.getElementById('loginOverlay').classList.add('hidden');
             } else {
                 document.getElementById('loginError').style.display = 'block';
             }
         }
         
+        // 页面加载时检查登录
         document.addEventListener('DOMContentLoaded', () => {
             checkLogin();
-            initGrid();
+        });
+        
+        // 回车登录
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const loginOverlay = document.getElementById('loginOverlay');
+                if (!loginOverlay.classList.contains('hidden')) {
+                    doLogin();
+                }
+            }
+        });</script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #212121; color: #e5e5e5; min-height: 100vh; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .header { padding: 16px 0; border-bottom: 1px solid #2d2d2d; display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+        .header h1 { font-size: 20px; font-weight: 600; color: #fff; }
+        .header .badge { background: #07c160; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 12px; }
+        .logo-wrap{display:flex;align-items:center;gap:8px}
+        .logo-wrap img{height:32px;border-radius:6px}
+        .sp{flex:1}
+        .settings-btn{background:#2d2d2d;border:1px solid #404040;color:#aaa;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
+        .settings-btn:hover{background:#3a3a3a}
+        .card { background: #2d2d2d; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+        .card-title { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .card-title .icon { font-size: 18px; }
+        .form-row { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; }
+        .form-group { display: flex; flex-direction: column; gap: 4px; }
+        .form-group label { font-size: 12px; color: #8a8a8a; }
+        .form-group input, .form-group select, .form-group textarea { background: #1e1e1e; border: 1px solid #404040; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 13px; outline: none; }
+        .form-group textarea { resize: none; min-height: 80px; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #07c160; }
+        .input-full { flex: 1; min-width: 200px; }
+        .btn { background: #07c160; border: none; color: #fff; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.2s; }
+        .btn:hover { background: #06a050; }
+        .btn:disabled { background: #1a4a3a; color: #5a8a7a; cursor: not-allowed; }
+        .btn-outline { background: transparent; border: 1px solid #404040; color: #e5e5e5; }
+        .btn-outline:hover { border-color: #606060; }
+        .btn-danger { background: #ef4444; }
+        .btn-danger:hover { background: #dc2626; }
+        .size-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+        .size-tabs button { background: #1e1e1e; border: 1px solid #404040; color: #8a8a8a; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+        .size-tabs button.active { background: #07c160; border-color: #07c160; color: #fff; }
+        .sticker-grid { display: grid; gap: 8px; margin: 16px 0; }
+        .sticker-grid.size-1 { grid-template-columns: repeat(1, 1fr); }
+        .sticker-grid.size-2 { grid-template-columns: repeat(2, 1fr); }
+        .sticker-grid.size-4 { grid-template-columns: repeat(2, 1fr); }
+        .sticker-grid.size-8 { grid-template-columns: repeat(4, 1fr); }
+        .sticker-grid.size-16 { grid-template-columns: repeat(4, 1fr); }
+        .sticker-grid.size-24 { grid-template-columns: repeat(6, 1fr); }
+        .sticker-cell { aspect-ratio: 1; background: #1e1e1e; border: 2px dashed #404040; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; overflow: hidden; transition: border-color 0.2s; }
+        .sticker-cell:hover { border-color: #07c160; }
+        .sticker-cell.has-image { border-style: solid; border-color: #07c160; }
+        .sticker-cell .cell-num { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.6); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+        .sticker-cell .cell-img { width: 100%; height: 100%; object-fit: cover; }
+        .sticker-cell .cell-placeholder { font-size: 24px; color: #404040; }
+        .sticker-cell .cell-actions { position: absolute; top: 4px; right: 4px; display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s; }
+        .sticker-cell:hover .cell-actions { opacity: 1; }
+        .sticker-cell .cell-actions button { background: rgba(0,0,0,0.7); border: none; color: #fff; width: 24px; height: 24px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .text-edit-panel { background: #1e1e1e; border: 1px solid #404040; border-radius: 8px; padding: 16px; margin-top: 16px; display: none; }
+        .text-edit-panel.active { display: block; }
+        .text-edit-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+        .text-edit-row input { background: #2d2d2d; border: 1px solid #404040; color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 12px; flex: 1; }
+        .text-edit-row label { font-size: 12px; color: #8a8a8a; min-width: 60px; }
+        .export-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-top: 12px; }
+        .export-item { background: #1e1e1e; border-radius: 8px; padding: 8px; text-align: center; }
+        .export-item img { width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 4px; background: #2d2d2d; }
+        .export-item .export-label { font-size: 11px; color: #8a8a8a; margin-top: 4px; }
+        .export-item .export-size { font-size: 10px; color: #666; }
+        .loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+        .loading-overlay.hidden { display: none; }
+        .spinner { width: 40px; height: 40px; border: 3px solid #404040; border-top-color: #07c160; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .progress-wrap { width: 200px; height: 6px; background: #2d2d2d; border-radius: 3px; overflow: hidden; }
+        .progress-bar { height: 100%; background: #07c160; border-radius: 3px; transition: width 0.3s; width: 0%; }
+        .log-area { background: #1e1e1e; border: 1px solid #2d2d2d; border-radius: 8px; padding: 12px; margin-top: 16px; max-height: 150px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #8a8a8a; }
+        .log-line { margin-bottom: 4px; }
+        .log-line.success { color: #07c160; }
+        .log-line.error { color: #ef4444; }
+        .api-key-wrap { position: relative; display: flex; align-items: center; }
+        .api-key-wrap input { background: #1e1e1e; border: 1px solid #404040; color: #fff; padding: 8px 32px 8px 12px; border-radius: 8px; font-size: 13px; width: 280px; outline: none; }
+        .toggle-key { position: absolute; right: 8px; background: none; border: none; color: #8a8a8a; cursor: pointer; }
+        .tab-nav { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid #2d2d2d; padding-bottom: 12px; }
+        .tab-nav button { background: transparent; border: none; color: #8a8a8a; padding: 8px 16px; cursor: pointer; font-size: 14px; border-radius: 8px; }
+        .tab-nav button.active { background: #07c160; color: #fff; }
+        .image-upload-area { border: 2px dashed #404040; border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.2s; }
+        .image-upload-area:hover { border-color: #07c160; }
+        .image-upload-area .upload-icon { font-size: 48px; color: #404040; margin-bottom: 12px; }
+        .image-upload-area p { color: #8a8a8a; font-size: 14px; }
+        .image-upload-area input { display: none; }
+        .image-preview { max-width: 300px; margin: 16px auto; border-radius: 8px; overflow: hidden; }
+        .image-preview img { width: 100%; display: block; }
+        .specs-table { background: #1e1e1e; border-radius: 8px; padding: 12px; font-size: 12px; }
+        .specs-table table { width: 100%; border-collapse: collapse; }
+        .specs-table th, .specs-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid #2d2d2d; }
+        .specs-table th { color: #8a8a8a; }
+        .specs-table td { color: #fff; }
+        .specs-table .red { color: #ef4444; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+        .modal-overlay.hidden { display: none; }
+        .modal-overlay img { max-width: 90vw; max-height: 90vh; border-radius: 12px; }
+        .modal-overlay .close-btn { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 20px; }
+        .login-overlay { position: fixed; inset: 0; background: #212121; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+        .login-overlay.hidden { display: none; }
+        .login-overlay .login-logo { width: 80px; height: 80px; border-radius: 12px; }
+        .login-overlay .login-title { font-size: 24px; font-weight: 600; color: #fff; }
+        .login-overlay .login-form { display: flex; flex-direction: column; gap: 12px; width: 280px; }
+        .login-overlay .login-form input { background: #2d2d2d; border: 1px solid #404040; color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 14px; outline: none; }
+        .login-overlay .login-form input:focus { border-color: #07c160; }
+        .login-overlay .login-form button { background: #07c160; border: none; color: #fff; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; }
+        .login-overlay .login-form button:hover { background: #06a050; }
+        .login-overlay .login-error { color: #ef4444; font-size: 12px; display: none; }
+        .login-overlay { position: fixed; inset: 0; background: #212121; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+        .login-overlay.hidden { display: none; }
+        .login-overlay .login-logo { width: 80px; height: 80px; border-radius: 12px; }
+        .login-overlay .login-title { font-size: 24px; font-weight: 600; color: #fff; }
+        .login-overlay .login-form { display: flex; flex-direction: column; gap: 12px; width: 280px; }
+        .login-overlay .login-form input { background: #2d2d2d; border: 1px solid #404040; color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 14px; outline: none; }
+        .login-overlay .login-form input:focus { border-color: #07c160; }
+        .login-overlay .login-form button { background: #07c160; border: none; color: #fff; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; }
+        .login-overlay .login-form button:hover { background: #06a050; }
+        .login-overlay .login-error { color: #ef4444; font-size: 12px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-wrap"><img src="/msc_logo.png?v=3" id="logoImg"></div>
+            <h1>MSC·幻天屿</h1>
+            <span class="badge">表情包</span>
+            <div class="sp"></div>
+            <button class="settings-btn" onclick="window.open('/image.html','_blank')" title="生图">🎨</button>
+        </div>
+
+        <!-- 标签页 -->
+        <div class="tab-nav">
+            <button class="active" data-tab="generate">📝 文生图</button>
+            <button data-tab="style">🎨 图生图</button>
+            <button data-tab="text">✏️ 文字编辑</button>
+            <button data-tab="export">📦 导出</button>
+        </div>
+
+        <!-- API 配置 -->
+        <div class="card">
+            <div class="card-title"><span class="icon">🔑</span> API 配置</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>API Key</label>
+                    <div class="api-key-wrap">
+                        <input type="password" id="apiKey" value="sk-h3LbjhNvSgv46uFm2d36B651439642E5Bb4bFcC2237aAa02" autocomplete="off">
+                        <button class="toggle-key" onclick="toggleKey()">👁</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>BaseURL</label>
+                    <input type="text" id="baseUrl" value="https://api.apiyi.com/v1">
+                </div>
+            </div>
+        </div>
+
+        <!-- 套图数量 -->
+        <div class="card">
+            <div class="card-title"><span class="icon">📋</span> 套图数量</div>
+            <div class="size-tabs" id="sizeTabs">
+                <button data-size="1">1格</button>
+                <button data-size="2">2格</button>
+                <button data-size="4">4格</button>
+                <button data-size="8">8格</button>
+                <button data-size="16" class="active">16格</button>
+                <button data-size="24">24格</button>
+            </div>
+            <div class="specs-table">
+                <table>
+                    <tr><th>规格</th><th>主图</th><th>缩略图</th><th>封面图</th><th>聊天图标</th></tr>
+                    <tr><td>尺寸</td><td>240×240</td><td>120×120</td><td>240×240</td><td>50×50</td></tr>
+                    <tr><td>格式</td><td class="red">GIF</td><td class="red">PNG</td><td>PNG</td><td>PNG</td></tr>
+                    <tr><td>大小</td><td>≤200KB</td><td>≤200KB</td><td>≤200KB</td><td>≤50KB</td></tr>
+                    <tr><td>透明</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- 文生图 -->
+        <div class="card" id="tab-generate">
+            <div class="card-title"><span class="icon">📝</span> 文生图</div>
+            <div class="form-row">
+                <div class="form-group input-full">
+                    <label>主形象描述</label>
+                    <textarea id="mainPrompt" placeholder="例如：一只可爱的粉色小兔子，戴着蓝色蝴蝶结，眼睛大大的，表情萌萌的"></textarea>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group input-full">
+                    <label>表情列表（用逗号分隔）</label>
+                    <textarea id="expressionPrompt" placeholder="例如：微笑,大哭,生气,卖萌,发呆,害羞,得意,困了"></textarea>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>风格</label>
+                    <select id="styleSelect">
+                        <option value="卡通">卡通风格</option>
+                        <option value="Q版">Q版萌宠</option>
+                        <option value="简笔画">简笔画</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>背景</label>
+                    <select id="bgSelect">
+                        <option value="透明背景">透明</option>
+                        <option value="白色背景">白色</option>
+                    </select>
+                </div>
+                <div class="form-group" style="align-self: flex-end;">
+                    <button class="btn" onclick="generateAll()">🚀 生成</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图生图 -->
+        <div class="card" id="tab-style">
+            <div class="card-title"><span class="icon">🎨</span> 图生图</div>
+            <div class="image-upload-area" onclick="document.getElementById('styleImgInput').click()">
+                <div class="upload-icon">🖼️</div>
+                <p>点击上传图片</p>
+                <input type="file" id="styleImgInput" accept="image/*" onchange="handleStyleUpload(event)">
+            </div>
+            <div class="image-preview" id="stylePreview" style="display:none;">
+                <img id="stylePreviewImg" src="" alt="预览">
+                <div style="margin-top:12px;">
+                    <input type="text" id="stylePrompt" placeholder="输入提示词描述想要的效果，如：转换为可爱卡通风格，透明背景" style="width:100%;background:#1e1e1e;border:1px solid #404040;color:#fff;padding:8px 12px;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;">
+                </div>
+                <button class="btn" style="margin-top:8px;width:100%;" onclick="convertStyle()">🎨 生成</button>
+            </div>
+        </div>
+
+        <!-- 文字编辑 -->
+        <div class="card" id="tab-text">
+            <div class="card-title"><span class="icon">✏️</span> 文字编辑</div>
+            <p style="font-size:12px;color:#666;margin-bottom:12px;">点击表情格子添加文字</p>
+            <div class="sticker-grid" id="textEditGrid"></div>
+            <div class="text-edit-panel" id="textEditPanel">
+                <div class="card-title">编辑第 <span id="editCellNum">1</span> 格</div>
+                <div class="text-edit-row">
+                    <label>文字:</label>
+                    <input type="text" id="editText" placeholder="输入文字">
+                </div>
+                <div class="text-edit-row">
+                    <label>字体大小:</label>
+                    <input type="range" id="editFontSize" min="10" max="40" value="20">
+                    <span id="fontSizeVal">20px</span>
+                </div>
+                <div class="text-edit-row">
+                    <label>颜色:</label>
+                    <input type="color" id="editColor" value="#ffffff">
+                </div>
+                <div style="display:flex;gap:8px;margin-top:12px;">
+                    <button class="btn" onclick="applyText()">✅ 应用</button>
+                    <button class="btn btn-outline" onclick="closeTextEdit()">取消</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 导出 -->
+        <div class="card" id="tab-export">
+            <div class="card-title"><span class="icon">📦</span> 导出预览</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>表情包名称(4字)</label>
+                    <input type="text" id="packName" placeholder="萌兔" maxlength="4">
+                </div>
+                <div class="form-group">
+                    <label>表情名称(8字)</label>
+                    <input type="text" id="stickerName" placeholder="可爱小兔子" maxlength="8">
+                </div>
+            </div>
+            <button class="btn" onclick="generateAllExport()">📦 生成导出图片</button>
+            <div class="export-grid" id="exportGrid"></div>
+            <div class="log-area" id="exportLog"></div>
+        </div>
+
+        <!-- 表情预览 -->
+        <div class="card">
+            <div class="card-title"><span class="icon">👁</span> 表情预览</div>
+            <div class="sticker-grid" id="stickerGrid"></div>
+        </div>
+    </div>
+
+    <!-- 加载动画 -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div id="loadingText">生成中...</div>
+        <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    </div>
+
+    <!-- 大图预览 -->
+    <div class="modal-overlay hidden" id="imageModal" onclick="closeModal()">
+        <button class="close-btn">✕</button>
+        <img id="modalImg" src="" alt="大图">
+    </div>
+
+    <script>
+        let currentSize = 16;
+        let stickers = {};
+        let editingIndex = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
             initTabs();
             initSizeTabs();
-            loadSettings();
+            initGrid();
+            initFontSlider();
         });
 
-        // Tab 切换
+        function toggleKey() {
+            const input = document.getElementById('apiKey');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
         function initTabs() {
-            document.querySelectorAll('.tab-btn').forEach(btn => {
+            document.querySelectorAll('.tab-nav button').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-                    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+                    const tab = btn.dataset.tab;
+                    ['generate', 'style', 'text', 'export'].forEach(t => {
+                        const el = document.getElementById('tab-' + t);
+                        if (el) el.style.display = t === tab ? 'block' : 'none';
+                    });
                 });
             });
         }
 
-        // 设置
-        function loadSettings() {
-            const savedKey = localStorage.getItem('msc_api_key');
-            const savedUrl = localStorage.getItem('msc_base_url');
-            if (savedKey) document.getElementById('apiKey').value = savedKey;
-            if (savedUrl) document.getElementById('baseUrl').value = savedUrl;
-        }
-        
-        function saveSettings() {
-            localStorage.setItem('msc_api_key', document.getElementById('apiKey').value);
-            localStorage.setItem('msc_base_url', document.getElementById('baseUrl').value);
-            alert('已保存');
-        }
-
-        // 网格大小
-        let currentSize = 8;
-        let stickers = {};
-        
         function initSizeTabs() {
             document.querySelectorAll('.size-tabs button').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -646,10 +375,10 @@
                 });
             });
         }
-        
+
         function initGrid() {
             const grid = document.getElementById('stickerGrid');
-            const textGrid = document.getElementById('textGrid');
+            const textGrid = document.getElementById('textEditGrid');
             grid.className = 'sticker-grid size-' + currentSize;
             textGrid.className = 'sticker-grid size-' + currentSize;
             grid.innerHTML = '';
@@ -660,222 +389,345 @@
                 textGrid.appendChild(createTextCell(i));
             }
         }
-        
+
         function createCell(index) {
             const cell = document.createElement('div');
             cell.className = 'sticker-cell';
             cell.dataset.index = index;
-            const data = stickers[index];
-            if (data?.image) {
-                cell.classList.add('has-image');
-                cell.innerHTML = `
-                    <span class="cell-num">${String(index).padStart(2,'0')}</span>
-                    <img class="cell-img" src="${data.image}" onclick="showModal('${data.image}')">
-                    <div class="cell-actions">
-                        <button onclick="event.stopPropagation();deleteSticker(${index})">删除</button>
-                    </div>
-                `;
-            } else {
-                cell.innerHTML = `<span class="cell-num">${String(index).padStart(2,'0')}</span><span class="cell-placeholder">+</span>`;
-                cell.onclick = () => uploadSticker(index);
-            }
+            cell.innerHTML = `<span class="cell-num">${String(index).padStart(2, '0')}</span><span class="cell-placeholder">+</span>`;
+            cell.addEventListener('click', () => selectCell(index));
             return cell;
         }
-        
+
         function createTextCell(index) {
             const cell = document.createElement('div');
-            cell.className = 'sticker-cell' + (stickers[index]?.image ? ' has-image' : '');
+            cell.className = 'sticker-cell';
             cell.dataset.index = index;
-            cell.innerHTML = `<span class="cell-num">${String(index).padStart(2,'0')}</span><span class="cell-placeholder">${stickers[index]?.image ? '✏️' : '+'}</span>`;
-            cell.onclick = () => openTextEdit(index);
+            const data = stickers[index];
+            if (data && data.image) {
+                cell.classList.add('has-image');
+                cell.innerHTML = `<span class="cell-num">${String(index).padStart(2, '0')}</span><span class="cell-placeholder">✏️</span>`;
+            } else {
+                cell.innerHTML = `<span class="cell-num">${String(index).padStart(2, '0')}</span><span class="cell-placeholder">+</span>`;
+            }
+            cell.addEventListener('click', () => openTextEdit(index));
             return cell;
         }
-        
-        function uploadSticker(index) {
+
+        function selectCell(index) {
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = 'image/*';
-            input.onchange = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    stickers[index] = { image: ev.target.result, text: '', textStyle: {} };
-                    initGrid();
-                };
-                reader.readAsDataURL(file);
-            };
+            input.onchange = (e) => handleImageUpload(e, index);
             input.click();
         }
-        
-        function deleteSticker(index) {
-            delete stickers[index];
-            initGrid();
-        }
 
-        // 批量生成
-        async function generateBatch() {
-            const apiKey = document.getElementById('apiKey').value.trim();
-            const baseUrl = document.getElementById('baseUrl').value.trim() || '/api-proxy/v1';
-            const mainPrompt = document.getElementById('mainPrompt').value.trim();
-            const expressions = document.getElementById('expressionPrompt').value.split(/[,，]/).map(e => e.trim()).filter(e => e);
-            const style = document.getElementById('styleSelect').value;
-            const bg = document.getElementById('bgSelect').value;
-            
-            if (!mainPrompt) { alert('请输入角色描述'); return; }
-            if (!apiKey) { alert('请输入 API Key'); return; }
-            if (expressions.length === 0) { alert('请输入表情列表'); return; }
-            
-            const progressBar = document.getElementById('batchProgress');
-            const progressFill = document.getElementById('batchProgressFill');
-            progressBar.classList.add('active');
-            
-            const count = Math.min(expressions.length, currentSize);
-            for (let i = 0; i < count; i++) {
-                const prompt = `${mainPrompt}，${expressions[i]}，${style}风格，${bg}，微信表情包风格`;
-                progressFill.style.width = `${(i / count) * 100}%`;
-                
-                try {
-                    const response = await fetch(`${baseUrl}/images/generations`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                        body: JSON.stringify({ model: 'gpt-image-2-all', prompt, response_format: 'b64_json' })
-                    });
-                    if (!response.ok) continue;
-                    const data = await response.json();
-                    if (data.data?.[0]?.b64_json) {
-                        stickers[i + 1] = { image: `data:image/png;base64,${data.data[0].b64_json}`, text: '', textStyle: {} };
-                        initGrid();
-                    }
-                } catch (e) { console.error(e); }
-            }
-            progressFill.style.width = '100%';
-            setTimeout(() => progressBar.classList.remove('active'), 500);
-        }
-
-        // 风格转换
-        let styleImageBase64 = null;
-        function previewStyleImage(event) {
+        function handleImageUpload(event, index) {
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
             reader.onload = (e) => {
-                styleImageBase64 = e.target.result.split(',')[1];
+                stickers[index] = { ...stickers[index], image: e.target.result, text: '', textStyle: {} };
+                updateCell(index);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateCell(index) {
+            const grid = document.getElementById('stickerGrid');
+            const cell = grid.children[index - 1];
+            const data = stickers[index];
+            if (data && data.image) {
+                cell.classList.add('has-image');
+                cell.innerHTML = `
+                    <span class="cell-num">${String(index).padStart(2, '0')}</span>
+                    <img class="cell-img" src="${data.image}" alt="表情${index}" onclick="showModal('${data.image}')">
+                    <div class="cell-actions">
+                        <button onclick="event.stopPropagation(); deleteCell(${index})">🗑️</button>
+                    </div>`;
+            } else {
+                cell.classList.remove('has-image');
+                cell.innerHTML = `<span class="cell-num">${String(index).padStart(2, '0')}</span><span class="cell-placeholder">+</span>`;
+            }
+        }
+
+        function deleteCell(index) {
+            delete stickers[index];
+            updateCell(index);
+            updateTextEditGrid();
+        }
+
+        function initFontSlider() {
+            const slider = document.getElementById('editFontSize');
+            slider.addEventListener('input', () => {
+                document.getElementById('fontSizeVal').textContent = slider.value + 'px';
+            });
+        }
+
+        function openTextEdit(index) {
+            if (!stickers[index] || !stickers[index].image) {
+                alert('请先生成或上传图片');
+                return;
+            }
+            editingIndex = index;
+            document.getElementById('editCellNum').textContent = index;
+            const data = stickers[index] || {};
+            document.getElementById('editText').value = data.text || '';
+            document.getElementById('editFontSize').value = data.textStyle?.fontSize || 20;
+            document.getElementById('editColor').value = data.textStyle?.color || '#ffffff';
+            document.getElementById('fontSizeVal').textContent = (data.textStyle?.fontSize || 20) + 'px';
+            document.getElementById('textEditPanel').classList.add('active');
+        }
+
+        function applyText() {
+            const text = document.getElementById('editText').value;
+            const fontSize = document.getElementById('editFontSize').value;
+            const color = document.getElementById('editColor').value;
+            stickers[editingIndex] = { ...stickers[editingIndex], text, textStyle: { fontSize, color } };
+            updateTextEditGrid();
+            closeTextEdit();
+            log('success', `第${editingIndex}格已添加文字: ${text}`);
+        }
+
+        function closeTextEdit() {
+            document.getElementById('textEditPanel').classList.remove('active');
+            editingIndex = null;
+        }
+
+        function updateTextEditGrid() {
+            const grid = document.getElementById('textEditGrid');
+            for (let i = 1; i <= currentSize; i++) {
+                const cell = grid.children[i - 1];
+                const data = stickers[i];
+                if (data && data.text) {
+                    cell.classList.add('has-image');
+                    cell.innerHTML = `<span class="cell-num">${String(i).padStart(2, '0')}</span><span class="cell-placeholder">✏️</span>`;
+                } else {
+                    cell.classList.remove('has-image');
+                    cell.innerHTML = `<span class="cell-num">${String(i).padStart(2, '0')}</span><span class="cell-placeholder">+</span>`;
+                }
+            }
+        }
+
+        function showModal(src) {
+            document.getElementById('modalImg').src = src;
+            document.getElementById('imageModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').classList.add('hidden');
+        }
+
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+
+        function updateProgress(pct) {
+            document.getElementById('progressBar').style.width = pct + '%';
+        }
+
+        function log(type, msg) {
+            const log = document.getElementById('exportLog');
+            const line = document.createElement('div');
+            line.className = 'log-line ' + type;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            log.appendChild(line);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        async function generateAll() {
+            const apiKey = document.getElementById('apiKey').value;
+            const baseUrl = document.getElementById('baseUrl').value.replace(/\/$/, '');
+            const mainPrompt = document.getElementById('mainPrompt').value.trim();
+            const expressionPrompt = document.getElementById('expressionPrompt').value.trim();
+            const style = document.getElementById('styleSelect').value;
+            const bg = document.getElementById('bgSelect').value;
+
+            if (!mainPrompt) { alert('请输入主形象描述'); return; }
+            if (!expressionPrompt) { alert('请输入表情列表'); return; }
+
+            const expressions = expressionPrompt.split(/[,，]/).map(e => e.trim()).filter(e => e);
+            const count = Math.min(expressions.length, currentSize);
+
+            if (!confirm(`将生成 ${count} 张表情，继续吗？`)) return;
+
+            showLoading('正在生成...');
+            log('info', `开始生成 ${count} 张表情`);
+
+            for (let i = 0; i < count; i++) {
+                const prompt = `${mainPrompt}，${expressions[i]}，${style}风格，${bg}，微信表情包风格`;
+                updateProgress((i / count) * 100);
+                try {
+                    const img = await callAPI(baseUrl, apiKey, prompt);
+                    stickers[i + 1] = { image: img, text: '', textStyle: {} };
+                    updateCell(i + 1);
+                    log('success', `第${i+1}张完成`);
+                } catch (err) {
+                    log('error', `第${i+1}张失败: ${err.message}`);
+                }
+            }
+
+            updateProgress(100);
+            hideLoading();
+            log('success', '全部生成完成！');
+        }
+
+        async function callAPI(baseUrl, apiKey, prompt) {
+            const response = await fetch(`${baseUrl}/images/generations`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                body: JSON.stringify({ model: 'gpt-image-2-all', prompt: prompt })
+            });
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error(err);
+            }
+            const data = await response.json();
+            if (data.data && data.data[0]) {
+                const imgData = data.data[0];
+                if (imgData.url) {
+                    const resp = await fetch(imgData.url);
+                    const blob = await resp.blob();
+                    return new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onload = e => resolve(e.target.result);
+                        reader.readAsDataURL(blob);
+                    });
+                } else if (imgData.b64_json) {
+                    return `data:image/png;base64,${imgData.b64_json}`;
+                }
+            }
+            throw new Error('API响应无效');
+        }
+
+        function handleStyleUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
                 document.getElementById('stylePreviewImg').src = e.target.result;
                 document.getElementById('stylePreview').style.display = 'block';
             };
             reader.readAsDataURL(file);
         }
-        
+
         async function convertStyle() {
-            const apiKey = document.getElementById('apiKey').value.trim();
-            const baseUrl = document.getElementById('baseUrl').value.trim() || '/api-proxy/v1';
-            if (!apiKey) { alert('请输入 API Key'); return; }
-            if (!styleImageBase64) { alert('请先上传图片'); return; }
-            
-            const prompt = document.getElementById('stylePrompt').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const baseUrl = document.getElementById('baseUrl').value.replace(/\/$/, '');
+            const img = document.getElementById('stylePreviewImg').src;
+            const userPrompt = document.getElementById('stylePrompt').value.trim() || '转换为卡通表情风格，透明背景，高质量';
+            showLoading('正在生成...');
             try {
                 const response = await fetch(`${baseUrl}/images/edits`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                    body: JSON.stringify({ model: 'gpt-image-2-all', prompt, image: styleImageBase64 })
+                    body: JSON.stringify({
+                        model: 'gpt-image-2-all',
+                        prompt: userPrompt,
+                        image: img.split(',')[1]
+                    })
                 });
-                if (!response.ok) throw new Error('转换失败');
+                if (!response.ok) throw new Error(await response.text());
                 const data = await response.json();
-                if (data.data?.[0]?.b64_json) {
-                    stickers[1] = { image: `data:image/png;base64,${data.data[0].b64_json}`, text: '', textStyle: {} };
-                    initGrid();
-                    alert('转换成功');
+                if (data.data && data.data[0] && data.data[0].b64_json) {
+                    const result = `data:image/png;base64,${data.data[0].b64_json}`;
+                    stickers[1] = { image: result, text: '', textStyle: {} };
+                    updateCell(1);
+                    log('success', '风格转换成功');
                 }
-            } catch (e) { alert(e.message); }
+            } catch (err) {
+                log('error', '转换失败: ' + err.message);
+            }
+            hideLoading();
         }
 
-        // 文字编辑
-        let editingIndex = null;
-        function openTextEdit(index) {
-            if (!stickers[index]?.image) { alert('请先生成或上传图片'); return; }
-            editingIndex = index;
-            document.getElementById('editCellNum').textContent = index;
-            document.getElementById('editText').value = stickers[index].text || '';
-            document.getElementById('editFontSize').value = stickers[index].textStyle?.fontSize || 20;
-            document.getElementById('editColor').value = stickers[index].textStyle?.color || '#ffffff';
-            document.getElementById('textEditPanel').classList.add('active');
-        }
-        
-        function applyText() {
-            if (!editingIndex) return;
-            stickers[editingIndex].text = document.getElementById('editText').value;
-            stickers[editingIndex].textStyle = {
-                fontSize: document.getElementById('editFontSize').value,
-                color: document.getElementById('editColor').value
-            };
-            closeTextEdit();
-            log('success', `第${editingIndex}格文字已更新`);
-        }
-        
-        function closeTextEdit() {
-            document.getElementById('textEditPanel').classList.remove('active');
-            editingIndex = null;
-        }
-        
-        document.getElementById('editFontSize')?.addEventListener('input', (e) => {
-            document.getElementById('fontSizeVal').textContent = e.target.value + 'px';
-        });
-
-        // 导出
-        async function generateExport() {
-            const grid = document.getElementById('exportGrid');
+        function generateAllExport() {
+   const grid = document.getElementById('exportGrid');
             grid.innerHTML = '';
             log('info', '生成导出预览...');
-            
+
             for (let i = 1; i <= currentSize; i++) {
                 const data = stickers[i];
                 const item = document.createElement('div');
                 item.className = 'export-item';
                 
-                if (data?.image) {
-                    const thumb = await createThumbnail(data.image, 120, 120);
-                    item.innerHTML = `<img src="${thumb}"><div class="export-label">#${String(i).padStart(2,'0')}</div>`;
+                if (data && data.image) {
+                    // 生成缩略图
+                    const thumb = createThumbnail(data.image, 120, 120);
+                    item.innerHTML = `
+                        <img src="${thumb}" alt="缩略图${i}">
+                        <div class="export-label">缩略图 ${String(i).padStart(2, '0')}</div>
+                        <div class="export-size">120×120 PNG</div>
+                    `;
                 } else {
-                    item.innerHTML = `<div style="aspect-ratio:1;background:var(--bg-card);display:flex;align-items:center;justify-content:center;color:var(--text-dim);">?</div><div class="export-label">#${String(i).padStart(2,'0')}</div>`;
+                    item.innerHTML = `
+                        <div style="width:100%;aspect-ratio:1;background:#2d2d2d;display:flex;align-items:center;justify-content:center;color:#666;font-size:24px;">?</div>
+                        <div class="export-label">缩略图 ${String(i).padStart(2, '0')}</div>
+                        <div class="export-size">未生成</div>
+                    `;
                 }
                 grid.appendChild(item);
             }
-            log('success', '导出预览完成');
+            log('success', '预览生成完成');
         }
-        
-        function createThumbnail(base64, w, h) {
+
+        function createThumbnail(base64, width, height) {
             return new Promise(resolve => {
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    resolve(canvas.toDataURL());
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/png'));
                 };
-                img.onerror = () => resolve('');
                 img.src = base64;
             });
         }
+    
+        // 登录验证
+        const VALID_USER = 'admin';
+        const VALID_PASS = 'xiaohaixia';
+        const SESSION_KEY = 'msc_logged_in';
         
-        function log(type, msg) {
-            const logEl = document.getElementById('exportLog');
-            const line = document.createElement('div');
-            line.className = 'log-line ' + type;
-            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-            logEl.appendChild(line);
-            logEl.scrollTop = logEl.scrollHeight;
-        }
-
-        // 大图预览
-        function showModal(src) {
-            document.getElementById('modalImg').src = src;
-            document.getElementById('imageModal').classList.add('active');
+        function checkLogin() {
+            if (sessionStorage.getItem(SESSION_KEY) === '1') {
+                document.getElementById('loginOverlay').classList.add('hidden');
+                return true;
+            }
+            return false;
         }
         
-        function closeModal() {
-            document.getElementById('imageModal').classList.remove('active');
+        function doLogin() {
+            const user = document.getElementById('loginUser').value;
+            const pass = document.getElementById('loginPass').value;
+            if (user === VALID_USER && pass === VALID_PASS) {
+                sessionStorage.setItem(SESSION_KEY, '1');
+                document.getElementById('loginOverlay').classList.add('hidden');
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
         }
-    </script>
+        
+        // 页面加载时检查登录
+        document.addEventListener('DOMContentLoaded', () => {
+            checkLogin();
+        });
+        
+        // 回车登录
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const loginOverlay = document.getElementById('loginOverlay');
+                if (!loginOverlay.classList.contains('hidden')) {
+                    doLogin();
+                }
+            }
+        });</script>
 </body>
 </html>
