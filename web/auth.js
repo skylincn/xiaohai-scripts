@@ -39,7 +39,7 @@ function validateLogin(username, password) {
     // 注意：这只是前端简单保护，真正的安全需要后端验证
     // 这里使用简单比对，但至少不在源码中直接显示明文密码
     const validUser = atob('YWRtaW4='); // base64 of "admin"
-    const validPass = atob('eGlhaG9peGlh'); // base64 of "xiaohaixia"
+    const validPass = atob('eGlhb2hhaXhpYQ=='); // base64 of "xiaohaixia"
     
     return username === validUser && password === validPass;
 }
