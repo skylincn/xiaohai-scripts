@@ -3,786 +3,450 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎭 STICKER LAB ⚡</title>
-    <link rel="stylesheet" href="common.css">
+    <title>MSC·幻天屿 - 表情包生成</title>
     <style>
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 30px 20px;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --neon-cyan: #00f0ff;
+            --neon-pink: #ff00aa;
+            --neon-purple: #b967ff;
+            --text-main: #e0e0e0;
+            --text-dim: #888;
+            --border: #1e1e2e;
         }
         
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+        
+        /* 顶部栏 */
         .header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 40px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--border-neon);
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
         }
         
-        .header h1 {
-            font-size: 32px;
-            margin: 0;
+        .logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
         }
         
-        .header-actions {
-            display: flex;
-            gap: 16px;
+        .logo-text {
+            font-size: 20px;
+            font-weight: 600;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
-        .cyber-btn {
-            width: 50px;
-            height: 50px;
-            background: transparent;
-            border: 2px solid var(--neon-cyan);
-            border-radius: 12px;
-            color: var(--neon-cyan);
-            font-size: 24px;
-            cursor: pointer;
-            transition: all 0.3s;
+        /* 主容器 */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+        
+        /* 登录遮罩 */
+        .login-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 10, 15, 0.95);
             display: flex;
             align-items: center;
             justify-content: center;
+            z-index: 1000;
         }
         
-        .cyber-btn:hover {
-            background: var(--neon-cyan);
-            color: var(--bg-primary);
-            box-shadow: 0 0 30px var(--neon-cyan);
-            transform: translateY(-2px);
+        .login-overlay.hidden { display: none; }
+        
+        .login-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            width: 320px;
         }
         
-        .cyber-btn.pink {
+        .login-box h2 {
+            text-align: center;
+            margin-bottom: 24px;
+            font-size: 18px;
+            color: var(--neon-cyan);
+        }
+        
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 12px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 14px;
+        }
+        
+        .login-box input:focus {
+            outline: none;
+            border-color: var(--neon-cyan);
+        }
+        
+        .login-box button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .login-box button:hover { opacity: 0.9; }
+        
+        /* 输入区域 */
+        .input-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+        }
+        
+        .input-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 16px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--neon-cyan);
+        }
+        
+        textarea::placeholder { color: var(--text-dim); }
+        
+        /* 风格选择 */
+        .style-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .style-btn {
+            padding: 8px 12px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-dim);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        
+        .style-btn:hover, .style-btn.active {
             border-color: var(--neon-pink);
             color: var(--neon-pink);
         }
         
-        .cyber-btn.pink:hover {
-            background: var(--neon-pink);
-            box-shadow: 0 0 30px var(--neon-pink);
+        /* 生成按钮 */
+        .generate-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink));
+            border: none;
+            border-radius: 10px;
+            color: #000;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 20px 0;
         }
         
-        .settings-panel {
+        .generate-btn:hover { opacity: 0.9; }
+        .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        /* 进度条 */
+        .progress-bar {
+            height: 4px;
+            background: var(--bg-dark);
+            border-radius: 2px;
+            margin: 16px 0;
+            overflow: hidden;
             display: none;
-            margin-bottom: 30px;
         }
         
-        .settings-panel.active {
-            display: block;
-            animation: slideDown 0.3s ease;
+        .progress-bar.active { display: block; }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink));
+            width: 0%;
+            transition: width 0.3s;
         }
         
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* 结果展示 */
+        .result-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
         }
         
-        .size-tabs {
-            display: flex;
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 12px;
-            margin-bottom: 20px;
+            margin-top: 16px;
+        }
+        
+        .result-item {
+            background: var(--bg-dark);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .result-item img {
+            width: 100%;
+            display: block;
+        }
+        
+        .result-item .img-title {
+            padding: 8px;
+            font-size: 11px;
+            color: var(--text-dim);
+            text-align: center;
+        }
+        
+        .status-msg {
+            text-align: center;
+            color: var(--text-dim);
+            padding: 40px;
+            font-size: 14px;
+        }
+        
+        /* 设置 */
+        .settings-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
             flex-wrap: wrap;
         }
         
-        .size-tabs button {
-            padding: 12px 24px;
-            background: transparent;
-            border: 2px solid var(--border-neon);
-            border-radius: 10px;
-            color: var(--text-secondary);
-            font-family: 'Orbitron', sans-serif;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s;
+        .settings-row label {
+            font-size: 13px;
+            color: var(--text-dim);
         }
         
-        .size-tabs button:hover {
-            border-color: var(--neon-purple);
-            color: var(--neon-purple);
+        .settings-row input, .settings-row select {
+            padding: 8px 12px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 13px;
         }
         
-        .size-tabs button.active {
-            background: var(--neon-purple);
-            border-color: var(--neon-purple);
-            color: var(--bg-primary);
-            box-shadow: 0 0 20px var(--neon-purple);
-        }
+        .settings-row input { flex: 1; min-width: 200px; }
         
-        .text-edit-panel {
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid var(--border-neon);
-            border-radius: 16px;
-            padding: 24px;
-            margin-top: 20px;
-            display: none;
-        }
-        
-        .text-edit-panel.active {
-            display: block;
-            animation: slideDown 0.3s ease;
-        }
-        
-        .text-edit-row {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-        
-        .text-edit-row label {
-            min-width: 100px;
-            color: var(--neon-cyan);
-            font-family: 'Orbitron', sans-serif;
-            font-size: 12px;
-            text-transform: uppercase;
-        }
-        
-        .text-edit-row input[type="text"],
-        .text-edit-row input[type="color"] {
-            flex: 1;
-            padding: 12px 16px;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid var(--border-neon);
-            border-radius: 8px;
-            color: var(--text-primary);
-        }
-        
-        .text-edit-row input[type="range"] {
-            flex: 1;
-        }
-        
-        #fontSizeVal {
-            min-width: 50px;
-            color: var(--neon-pink);
-            font-family: 'Orbitron', sans-serif;
-        }
-        
-        .export-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 16px;
-            margin-top: 20px;
-        }
-        
-        .export-item {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid var(--border-neon);
-            border-radius: 12px;
-            overflow: hidden;
-            text-align: center;
-            transition: all 0.3s;
-        }
-        
-        .export-item:hover {
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 20px rgba(0, 245, 255, 0.2);
-        }
-        
-        .export-item img {
-            width: 100%;
-            aspect-ratio: 1;
-            object-fit: cover;
-        }
-        
-        .export-label {
-            padding: 10px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 11px;
-            color: var(--neon-cyan);
-        }
-        
-        .export-size {
-            font-size: 10px;
-            color: var(--text-secondary);
-            padding-bottom: 10px;
-        }
-        
-        input[type="file"] {
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 2px dashed var(--border-neon);
-            border-radius: 10px;
-            cursor: pointer;
-            width: 100%;
-            color: var(--text-secondary);
-        }
-        
-        input[type="file"]:hover {
-            border-color: var(--neon-cyan);
-        }
-        
-        #stylePreview {
-            margin: 16px 0;
-            padding: 16px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 2px solid var(--neon-purple);
-            border-radius: 12px;
-            display: inline-block;
-        }
-        
-        #stylePreviewImg {
-            max-width: 200px;
-            max-height: 200px;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(188, 19, 254, 0.3);
-        }
-        
-        @media (max-width: 768px) {
-            .header {
-                flex-direction: column;
-                gap: 20px;
-                text-align: center;
-            }
-            
-            .text-edit-row {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .text-edit-row label {
-                min-width: auto;
-            }
+        /* 张数选择 */
+        .count-select {
+            padding: 8px 12px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 13px;
         }
     </style>
 </head>
 <body>
-    <div class="login-overlay" id="loginOverlay">
-        <div class="login-box">
-            <h2 data-text="🎭 STICKER LAB 🎭">🎭 STICKER LAB 🎭</h2>
-            <input type="text" id="loginUser" placeholder="USERNAME" autocomplete="username">
-            <input type="password" id="loginPass" placeholder="PASSWORD" autocomplete="current-password">
-            <button onclick="doLogin()">[ ACCESS ]</button>
-            <div class="login-error" id="loginError">ACCESS DENIED</div>
-        </div>
-    </div>
-
-    <div class="container">
-        <div class="header">
-            <h1 class="cyber-title" data-text="🎭 STICKER LAB 🎭">🎭 STICKER LAB 🎭</h1>
-            <div class="header-actions">
-                <button class="cyber-btn" onclick="location.href='image.html'" title="图片生成">🎨</button>
-                <button class="cyber-btn pink" onclick="toggleSettings()" title="设置">⚙️</button>
-            </div>
-        </div>
-
-        <div class="card settings-panel" id="settingsPanel">
-            <div class="card-title">⚙️ SYSTEM CONFIG</div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>API KEY</label>
-                    <input type="password" id="apiKey" placeholder="INPUT API KEY">
-                </div>
-                <div class="form-group">
-                    <label>BASE URL</label>
-                    <input type="text" id="baseUrl" value="https://api.apiyi.com/v1">
-                </div>
-            </div>
-        </div>
-
-        <div class="tab-nav">
-            <button class="active" data-tab="generate">⚡ BATCH</button>
-            <button data-tab="style">🎨 STYLE</button>
-            <button data-tab="text">✏️ TEXT</button>
-            <button data-tab="export">📦 EXPORT</button>
-        </div>
-
-        <div class="card" id="tab-generate">
-            <div class="card-title">⚡ BATCH GENERATE</div>
+    <!-- 顶部栏 -->
+    <header class="header">
+        <img src="msc_logo.png" class="logo" alt="MSC Logo" onerror="this.style.display='none'">
+        <span class="logo-text">MSC·幻天屿</span>
+    </header>
+    
+    <!-- 主内容 -->
+    <main class="container">
+        <!-- 表情包描述 -->
+        <div class="input-section">
+            <div class="section-title">描述你的表情包</div>
+            <textarea id="promptInput" placeholder="比如：一只猫咪做出OK手势的表情包，白底黑线，纯文字：旺柴"></textarea>
             
-            <div class="size-tabs">
-                <button data-size="4">4 GRID</button>
-                <button data-size="8" class="active">8 GRID</button>
-                <button data-size="9">9 GRID</button>
-                <button data-size="16">16 GRID</button>
-            </div>
-            
-            <div class="form-group">
-                <label>CHARACTER DESCRIPTION</label>
-                <input type="text" id="mainPrompt" placeholder="e.g. A cute white rabbit, round body">
-            </div>
-            
-            <div class="form-group">
-                <label>EXPRESSIONS (comma separated)</label>
-                <input type="text" id="expressionPrompt" placeholder="e.g. happy, angry, crying, surprised, shy, sleeping">
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label>STYLE</label>
-                    <select id="styleSelect">
-                        <option value="cute cartoon">CUTE CARTOON</option>
-                        <option value="minimal line">MINIMAL LINE</option>
-                        <option value="pixel art">PIXEL ART</option>
-                        <option value="watercolor">WATERCOLOR</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>BACKGROUND</label>
-                    <select id="bgSelect">
-                        <option value="transparent">TRANSPARENT</option>
-                        <option value="white">WHITE</option>
-                        <option value="gradient">GRADIENT</option>
-                    </select>
-                </div>
-            </div>
-            
-            <button class="btn" onclick="generateAll()">⚡ START GENERATE</button>
-        </div>
-
-        <div class="card" id="tab-style" style="display:none;">
-            <div class="card-title">🎨 STYLE TRANSFER</div>
-            <div class="form-group">
-                <label>UPLOAD IMAGE</label>
-                <input type="file" id="styleImage" accept="image/*" onchange="handleStyleUpload(event)">
-            </div>
-            <div id="stylePreview" style="display:none;">
-                <img id="stylePreviewImg" alt="Preview">
-            </div>
-            <div class="form-group">
-                <label>TRANSFORM PROMPT</label>
-                <input type="text" id="stylePrompt" value="Convert to cartoon sticker style, transparent background, high quality">
-            </div>
-            <button class="btn" onclick="convertStyle()">🔄 TRANSFORM</button>
-        </div>
-
-        <div class="card" id="tab-text" style="display:none;">
-            <div class="card-title">✏️ TEXT EDITOR</div>
-            <p style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">Click sticker cell to add text</p>
-            <div class="sticker-grid size-8" id="textEditGrid"></div>
-            <div class="text-edit-panel" id="textEditPanel">
-                <div class="card-title">EDIT CELL #<span id="editCellNum">1</span></div>
-                <div class="text-edit-row">
-                    <label>Text:</label>
-                    <input type="text" id="editText" placeholder="Input text">
-                </div>
-                <div class="text-edit-row">
-                    <label>Size:</label>
-                    <input type="range" id="editFontSize" min="10" max="40" value="20">
-                    <span id="fontSizeVal">20px</span>
-                </div>
-                <div class="text-edit-row">
-                    <label>Color:</label>
-                    <input type="color" id="editColor" value="#ffffff">
-                </div>
-                <div style="display:flex;gap:12px;margin-top:20px;">
-                    <button class="btn" onclick="applyText()">✅ APPLY</button>
-                    <button class="btn btn-outline" onclick="closeTextEdit()">CANCEL</button>
-                </div>
+            <div class="style-grid">
+                <button class="style-btn" data-style="">默认</button>
+                <button class="style-btn" data-style="meme style">表情包</button>
+                <button class="style-btn" data-style="emoji style">emoji风格</button>
+                <button class="style-btn" data-style="cartoon">卡通</button>
+                <button class="style-btn" data-style="chibi">Q版</button>
             </div>
         </div>
-
-        <div class="card" id="tab-export" style="display:none;">
-            <div class="card-title">📦 EXPORT PACK</div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>PACK NAME (4 chars)</label>
-                    <input type="text" id="packName" placeholder="RABBIT" maxlength="4">
-                </div>
-                <div class="form-group">
-                    <label>STICKER NAME (8 chars)</label>
-                    <input type="text" id="stickerName" placeholder="Cute Bunny" maxlength="8">
-                </div>
+        
+        <!-- 张数 -->
+        <div class="input-section" style="padding-top:12px">
+            <div class="input-row">
+                <div class="section-title" style="margin-bottom:0;align-self:center">生成数量</div>
+                <select class="count-select" id="countSelect">
+                    <option value="1">1张</option>
+                    <option value="2">2张</option>
+                    <option value="3">3张</option>
+                    <option value="4">4张</option>
+                </select>
             </div>
-            <button class="btn" onclick="generateAllExport()">📦 GENERATE EXPORT</button>
-            <div class="export-grid" id="exportGrid"></div>
-            <div class="log-area" id="exportLog"></div>
         </div>
-
-        <div class="card">
-            <div class="card-title">👁 PREVIEW</div>
-            <div class="sticker-grid size-8" id="stickerGrid"></div>
+        
+        <!-- 生成按钮 -->
+        <button class="generate-btn" id="generateBtn">生成表情包</button>
+        
+        <!-- 进度条 -->
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
         </div>
-    </div>
-
-    <div class="loading-overlay hidden" id="loadingOverlay">
-        <div class="spinner"></div>
-        <div id="loadingText">GENERATING...</div>
-        <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
-    </div>
-
-    <div class="modal-overlay hidden" id="imageModal" onclick="closeModal()">
-        <button class="close-btn">✕</button>
-        <img id="modalImg" src="" alt="Preview">
-    </div>
-
+        
+        <!-- 结果区域 -->
+        <div class="result-section" id="resultSection">
+            <div class="status-msg" id="statusMsg">输入描述，点击生成</div>
+        </div>
+        
+        <!-- 设置 -->
+        <div class="settings-row">
+            <label>API Key</label>
+            <input type="password" id="apiKey" placeholder="输入你的 API Key">
+            <button class="style-btn" id="saveKeyBtn">保存</button>
+        </div>
+    </main>
+    
     <script src="auth.js"></script>
     <script>
-        let currentSize = 8;
-        let stickers = {};
-        let editingIndex = null;
-
-        document.addEventListener('DOMContentLoaded', () => {
-            initTabs();
-            initSizeTabs();
-            initGrid();
-            initFontSlider();
-            loadSettings();
-        });
-
-        function toggleSettings() {
-            document.getElementById('settingsPanel').classList.toggle('active');
-        }
-
-        function loadSettings() {
-            const savedKey = localStorage.getItem('msc_api_key');
-            const savedUrl = localStorage.getItem('msc_base_url');
-            if (savedKey) document.getElementById('apiKey').value = savedKey;
-            if (savedUrl) document.getElementById('baseUrl').value = savedUrl;
-        }
-
-        document.getElementById('apiKey')?.addEventListener('change', (e) => {
-            localStorage.setItem('msc_api_key', e.target.value);
-        });
-        document.getElementById('baseUrl')?.addEventListener('change', (e) => {
-            localStorage.setItem('msc_base_url', e.target.value);
-        });
-
-        function initTabs() {
-            document.querySelectorAll('.tab-nav button').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    const tab = btn.dataset.tab;
-                    ['generate', 'style', 'text', 'export'].forEach(t => {
-                        const el = document.getElementById('tab-' + t);
-                        if (el) el.style.display = t === tab ? 'block' : 'none';
-                    });
-                });
-            });
-        }
-
-        function initSizeTabs() {
-            document.querySelectorAll('.size-tabs button').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.size-tabs button').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    currentSize = parseInt(btn.dataset.size);
-                    initGrid();
-                });
-            });
-        }
-
-        function initGrid() {
-            const grid = document.getElementById('stickerGrid');
-            const textGrid = document.getElementById('textEditGrid');
-            grid.className = 'sticker-grid size-' + currentSize;
-            textGrid.className = 'sticker-grid size-' + currentSize;
-            grid.innerHTML = '';
-            textGrid.innerHTML = '';
-
-            for (let i = 1; i <= currentSize; i++) {
-                grid.appendChild(createCell(i));
-                textGrid.appendChild(createTextCell(i));
-            }
-        }
-
-        function createCell(index) {
-            const cell = document.createElement('div');
-            cell.className = 'sticker-cell';
-            cell.dataset.index = index;
-            cell.innerHTML = `<span class="cell-num">${String(index).padStart(2, '0')}</span><span class="cell-placeholder">+</span>`;
-            cell.addEventListener('click', () => selectCell(index));
-            return cell;
-        }
-
-        function createTextCell(index) {
-            const cell = document.createElement('div');
-            cell.className = 'sticker-cell';
-            cell.dataset.index = index;
-            const data = stickers[index];
-            if (data && data.image) {
-                cell.classList.add('has-image');
-                cell.innerHTML = `<span class="cell-num">${String(index).padStart(2, '0')}</span><span class="cell-placeholder">✏️</span>`;
-            } else {
-                cell.innerHTML = `<span class="cell-num">${String(index).padStart(2, '0')}</span><span class="cell-placeholder">+</span>`;
-            }
-            cell.addEventListener('click', () => openTextEdit(index));
-            return cell;
-        }
-
-        function selectCell(index) {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.onchange = (e) => handleImageUpload(e, index);
-            input.click();
-        }
-
-        function handleImageUpload(event, index) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                stickers[index] = { ...stickers[index], image: e.target.result, text: '', textStyle: {} };
-                updateCell(index);
+        // 保存 API Key
+        const apiKeyInput = document.getElementById('apiKey');
+        const saveKeyBtn = document.getElementById('saveKeyBtn');
+        const savedKey = localStorage.getItem('msc_api_key');
+        if (savedKey) apiKeyInput.value = savedKey;
+        
+        saveKeyBtn.onclick = () => {
+            localStorage.setItem('msc_api_key', apiKeyInput.value);
+            saveKeyBtn.textContent = '已保存';
+            setTimeout(() => saveKeyBtn.textContent = '保存', 1500);
+        };
+        
+        // 风格选择
+        document.querySelectorAll('.style-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (btn.dataset.style) {
+                    const p = document.getElementById('promptInput');
+                    p.value = p.value ? p.value + ', ' + btn.dataset.style : btn.dataset.style;
+                }
             };
-            reader.readAsDataURL(file);
-        }
-
-        function updateCell(index) {
-            const grid = document.getElementById('stickerGrid');
-            const cell = grid.children[index - 1];
-            const data = stickers[index];
-            if (data && data.image) {
-                cell.classList.add('has-image');
-                cell.innerHTML = `
-                    <span class="cell-num">${String(index).padStart(2, '0')}</span>
-                    <img class="cell-img" src="${data.image}" alt="Sticker ${index}" onclick="showModal('${data.image}')">
-                    <div class="cell-actions">
-                        <button onclick="event.stopPropagation(); deleteCell(${index})">🗑️</button>
-                    </div>`;
-            } else {
-                cell.classList.remove('has-image');
-                cell.innerHTML = `<span class="cell-num">${String(index).padStart(2, '0')}</span><span class="cell-placeholder">+</span>`;
-            }
-        }
-
-        function deleteCell(index) {
-            delete stickers[index];
-            updateCell(index);
-            updateTextEditGrid();
-        }
-
-        function initFontSlider() {
-            const slider = document.getElementById('editFontSize');
-            slider.addEventListener('input', () => {
-                document.getElementById('fontSizeVal').textContent = slider.value + 'px';
-            });
-        }
-
-        function openTextEdit(index) {
-            if (!stickers[index] || !stickers[index].image) {
-                alert('Please generate or upload image first');
-                return;
-            }
-            editingIndex = index;
-            document.getElementById('editCellNum').textContent = index;
-            const data = stickers[index] || {};
-            document.getElementById('editText').value = data.text || '';
-            document.getElementById('editFontSize').value = data.textStyle?.fontSize || 20;
-            document.getElementById('editColor').value = data.textStyle?.color || '#ffffff';
-            document.getElementById('fontSizeVal').textContent = (data.textStyle?.fontSize || 20) + 'px';
-            document.getElementById('textEditPanel').classList.add('active');
-        }
-
-        function applyText() {
-            const text = document.getElementById('editText').value;
-            const fontSize = document.getElementById('editFontSize').value;
-            const color = document.getElementById('editColor').value;
-            stickers[editingIndex] = { ...stickers[editingIndex], text, textStyle: { fontSize, color } };
-            updateTextEditGrid();
-            closeTextEdit();
-            log('success', `Cell #${editingIndex} text added: ${text}`);
-        }
-
-        function closeTextEdit() {
-            document.getElementById('textEditPanel').classList.remove('active');
-            editingIndex = null;
-        }
-
-        function updateTextEditGrid() {
-            const grid = document.getElementById('textEditGrid');
-            for (let i = 1; i <= currentSize; i++) {
-                const cell = grid.children[i - 1];
-                const data = stickers[i];
-                if (data && data.text) {
-                    cell.classList.add('has-image');
-                    cell.innerHTML = `<span class="cell-num">${String(i).padStart(2, '0')}</span><span class="cell-placeholder">✏️</span>`;
-                } else {
-                    cell.classList.remove('has-image');
-                    cell.innerHTML = `<span class="cell-num">${String(i).padStart(2, '0')}</span><span class="cell-placeholder">+</span>`;
-                }
-            }
-        }
-
-        function showModal(src) {
-            document.getElementById('modalImg').src = src;
-            document.getElementById('imageModal').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('imageModal').classList.add('hidden');
-        }
-
-        function showLoading(text) {
-            document.getElementById('loadingText').textContent = text;
-            document.getElementById('loadingOverlay').classList.remove('hidden');
-        }
-
-        function hideLoading() {
-            document.getElementById('loadingOverlay').classList.add('hidden');
-        }
-
-        function updateProgress(pct) {
-            document.getElementById('progressBar').style.width = pct + '%';
-        }
-
-        function log(type, msg) {
-            const logEl = document.getElementById('exportLog');
-            const line = document.createElement('div');
-            line.className = 'log-line ' + type;
-            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-            logEl.appendChild(line);
-            logEl.scrollTop = logEl.scrollHeight;
-        }
-
-        async function generateAll() {
-            const apiKey = document.getElementById('apiKey').value.trim();
-            const baseUrl = document.getElementById('baseUrl').value.replace(/\/$/, '');
-            const mainPrompt = document.getElementById('mainPrompt').value.trim();
-            const expressionPrompt = document.getElementById('expressionPrompt').value.trim();
-            const style = document.getElementById('styleSelect').value;
-            const bg = document.getElementById('bgSelect').value;
-
-            if (!mainPrompt) { alert('Please input character description'); return; }
-            if (!expressionPrompt) { alert('Please input expressions'); return; }
-            if (!apiKey) { alert('Please input API Key'); return; }
-
-            const expressions = expressionPrompt.split(/[,，]/).map(e => e.trim()).filter(e => e);
-            const count = Math.min(expressions.length, currentSize);
-
-            if (!confirm(`Will generate ${count} stickers, continue?`)) return;
-
-            showLoading('GENERATING...');
-            log('info', `Start generating ${count} stickers`);
-
-            for (let i = 0; i < count; i++) {
-                const prompt = `${mainPrompt}, ${expressions[i]}, ${style} style, ${bg}, WeChat sticker style`;
-                updateProgress((i / count) * 100);
-                document.getElementById('loadingText').textContent = `GENERATING ${i+1}/${count}...`;
-                
-                try {
-                    const img = await callAPI(baseUrl, apiKey, prompt);
-                    stickers[i + 1] = { image: img, text: '', textStyle: {} };
-                    updateCell(i + 1);
-                    log('success', `Sticker #${i+1} completed`);
-                } catch (err) {
-                    log('error', `Sticker #${i+1} failed: ${err.message}`);
-                }
-            }
-
-            updateProgress(100);
-            hideLoading();
-            log('success', 'All stickers generated!');
-        }
-
-        async function callAPI(baseUrl, apiKey, prompt) {
-            const response = await fetch(`${baseUrl}/images/generations`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-                body: JSON.stringify({ model: 'gpt-image-2-all', prompt: prompt })
-            });
-            if (!response.ok) {
-                const err = await response.text();
-                throw new Error(err);
-            }
-            const data = await response.json();
-            if (data.data && data.data[0]) {
-                const imgData = data.data[0];
-                if (imgData.url) {
-                    const resp = await fetch(imgData.url);
-                    const blob = await resp.blob();
-                    return new Promise(resolve => {
-                        const reader = new FileReader();
-                        reader.onload = e => resolve(e.target.result);
-                        reader.readAsDataURL(blob);
-                    });
-                } else if (imgData.b64_json) {
-                    return `data:image/png;base64,${imgData.b64_json}`;
-                }
-            }
-            throw new Error('Invalid API response');
-        }
-
-        function handleStyleUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                document.getElementById('stylePreviewImg').src = e.target.result;
-                document.getElementById('stylePreview').style.display = 'inline-block';
-            };
-            reader.readAsDataURL(file);
-        }
-
-        async function convertStyle() {
-            const apiKey = document.getElementById('apiKey').value.trim();
-            const baseUrl = document.getElementById('baseUrl').value.replace(/\/$/, '');
-            const img = document.getElementById('stylePreviewImg').src;
-            const userPrompt = document.getElementById('stylePrompt').value.trim() || 'Convert to cartoon sticker style, transparent background, high quality';
+        });
+        
+        // 生成
+        const generateBtn = document.getElementById('generateBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const resultSection = document.getElementById('resultSection');
+        const promptInput = document.getElementById('promptInput');
+        const countSelect = document.getElementById('countSelect');
+        
+        generateBtn.onclick = async () => {
+            const prompt = promptInput.value.trim();
+            if (!prompt) { alert('请输入描述'); return; }
             
-            if (!apiKey) { alert('Please input API Key'); return; }
+            const apiKey = apiKeyInput.value.trim();
+            if (!apiKey) { alert('请输入 API Key'); return; }
             
-            showLoading('TRANSFORMING...');
+            const n = parseInt(countSelect.value);
+            
+            generateBtn.disabled = true;
+            generateBtn.textContent = '生成中...';
+            progressBar.classList.add('active');
+            progressFill.style.width = '20%';
+            
             try {
-                const response = await fetch(`${baseUrl}/images/edits`, {
+                const response = await fetch('/api-proxy/v1/images/generations', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
                     body: JSON.stringify({
                         model: 'gpt-image-2-all',
-                        prompt: userPrompt,
-                        image: img.split(',')[1]
+                        prompt: prompt,
+                        n: n,
+                        response_format: 'b64_json'
                     })
                 });
-                if (!response.ok) throw new Error(await response.text());
+                
+                progressFill.style.width = '70%';
+                
+                if (!response.ok) throw new Error('API 请求失败');
+                
                 const data = await response.json();
-                if (data.data && data.data[0] && data.data[0].b64_json) {
-                    const result = `data:image/png;base64,${data.data[0].b64_json}`;
-                    stickers[1] = { image: result, text: '', textStyle: {} };
-                    updateCell(1);
-                    log('success', 'Style transform completed');
-                }
+                const images = data.data || [];
+                
+                if (images.length === 0) throw new Error('未收到图片数据');
+                
+                progressFill.style.width = '100%';
+                
+                let html = '<div class="result-grid">';
+                images.forEach((img, i) => {
+                    const src = `data:image/png;base64,${img.b64_json}`;
+                    html += `
+                        <div class="result-item">
+                            <img src="${src}" alt="表情包${i+1}">
+                            <div class="img-title">第${i+1}张</div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                resultSection.innerHTML = html;
+                
             } catch (err) {
-                log('error', 'Transform failed: ' + err.message);
+                resultSection.innerHTML = `<div class="status-msg" style="color:#ff6b6b">生成失败: ${err.message}</div>`;
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = '生成表情包';
+                setTimeout(() => progressBar.classList.remove('active'), 1500);
+                progressFill.style.width = '0%';
             }
-            hideLoading();
-        }
-
-        async function createThumbnail(base64, width, height) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    resolve(canvas.toDataURL('image/png'));
-                };
-                img.onerror = () => resolve('');
-                img.src = base64;
-            });
-        }
-
-        async function generateAllExport() {
-            const grid = document.getElementById('exportGrid');
-            grid.innerHTML = '';
-            log('info', 'Generating export preview...');
-
-            for (let i = 1; i <= currentSize; i++) {
-                const data = stickers[i];
-                const item = document.createElement('div');
-                item.className = 'export-item';
-
-                if (data && data.image) {
-                    const thumb = await createThumbnail(data.image, 120, 120);
-                    item.innerHTML = `
-                        <img src="${thumb}" alt="Thumb ${i}">
-                        <div class="export-label">STICKER ${String(i).padStart(2, '0')}</div>
-                        <div class="export-size">120×120 PNG</div>
-                    `;
-                } else {
-                    item.innerHTML = `
-                        <div style="width:100%;aspect-ratio:1;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:24px;">?</div>
-                        <div class="export-label">STICKER ${String(i).padStart(2, '0')}</div>
-                        <div class="export-size">NOT GENERATED</div>
-                    `;
-                }
-                grid.appendChild(item);
-            }
-            log('success', 'Export preview generated');
-        }
+        };
     </script>
 </body>
 </html>
