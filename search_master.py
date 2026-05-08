@@ -1,146 +1,232 @@
 #!/usr/bin/env python3
 """
-Search Master - 小海虾深度搜索工具 v1.0
-支持: Bing RSS / Jina Reader / 代理自动切换
-用法: python3 search_master.py "搜索词" [--num N] [--url-only]
+搜索工具 v3.0 - 修复版
+修复：代理可选、XML用标准库、支持多搜索源降级
 """
 
 import subprocess
-import sys
-import json
-import re
 import urllib.parse
+import re
+import json
 import time
+import xml.etree.ElementTree as ET
 from typing import List, Dict, Optional
 
-PROXY = "http://127.0.0.1:10808"
-
 class SearchMaster:
-    def __init__(self, proxy: str = PROXY):
-        self.proxy = proxy
-        
+    def __init__(self, proxy: str = "auto"):
+        """
+        proxy: 代理设置
+          - "auto": 自动检测（有代理用代理，没有直连）
+          - "none": 强制直连（不使用代理）
+          - 具体URL: 使用指定代理，如 "http://127.0.0.1:10808"
+        """
+        self.proxy = self._detect_proxy(proxy)
+        self.last_source = None
+
+    def _detect_proxy(self, proxy_setting: str) -> Optional[str]:
+        """检测可用代理"""
+        if proxy_setting.lower() == "none":
+            return None
+        if proxy_setting.lower() == "auto":
+            # 尝试常见代理端口
+            common_proxies = [
+                "http://127.0.0.1:10808",  # sing-box
+                "http://127.0.0.1:7890",     # Clash
+                "http://127.0.0.1:1080",    # 通用
+            ]
+            for p in common_proxies:
+                try:
+                    result = subprocess.run(
+                        ["curl", "-s", "--proxy", p, "--max-time", "3",
+                         "https://www.google.com", "-o", "/dev/null", "-w", "%{http_code}"],
+                        capture_output=True, timeout=5
+                    )
+                    if result.returncode == 0:
+                        return p
+                except:
+                    pass
+            return None  # 没找到可用代理，直连
+        return proxy_setting
+
     def _curl(self, url: str, timeout: int = 15) -> Optional[str]:
-        """通过代理发起 HTTP GET"""
-        cmd = [
-            "curl", "-s", "--max-time", str(timeout),
-            "--proxy", self.proxy, url
-        ]
+        """执行 curl 请求"""
+        cmd = ["curl", "-s", "--max-time", str(timeout), "-L"]
+        
+        if self.proxy:
+            cmd += ["--proxy", self.proxy]
+        
+        cmd.append(url)
+        
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout + 5)
-            return result.stdout if result.returncode == 0 else None
+            if result.returncode == 0:
+                return result.stdout
+            return None
         except Exception:
             return None
-    
+
+    def _retry_curl(self, url: str, retries: int = 2, timeout: int = 15) -> Optional[str]:
+        """带重试的 curl 请求"""
+        for attempt in range(retries + 1):
+            result = self._curl(url, timeout)
+            if result:
+                return result
+            if attempt < retries:
+                time.sleep(1)  # 等待后重试
+        return None
+
+    def _parse_bing_xml(self, xml_content: str, num: int = 5) -> List[Dict]:
+        """解析 Bing RSS XML"""
+        try:
+            root = ET.fromstring(xml_content)
+            items = root.findall('.//item')
+            results = []
+            for item in items[:num]:
+                title = item.findtext('title', '').strip()
+                link = item.findtext('link', '')
+                desc = item.findtext('description', '').strip()
+                # 过滤空标题和导航项
+                if title and title not in ('Bing', '搜尋結果', 'Search Results'):
+                    results.append({
+                        "title": title,
+                        "url": link,
+                        "description": desc[:100] if desc else ''
+                    })
+            return results
+        except ET.ParseError as e:
+            # XML 解析失败，尝试正则降级
+            return self._parse_bing_regex(xml_content, num)
+
+    def _parse_bing_regex(self, content: str, num: int = 5) -> List[Dict]:
+        """正则降级解析（仅在 XML 解析失败时使用）"""
+        pattern = r'<item>\s*<title><!\[CDATA\[([^\]]+)\]\]></title>\s*<link>([^<]+)</link>'
+        matches = re.findall(pattern, content, re.DOTALL)
+        results = []
+        for title, link in matches[:num]:
+            if title.strip() and title.strip() not in ('Bing', '搜尋結果', 'Search Results'):
+                results.append({"title": title.strip(), "url": link.strip(), "description": ''})
+        return results
+
     def search_bing(self, query: str, num: int = 5) -> List[Dict]:
-        """Bing RSS 搜索，返回标题+URL列表"""
-        encoded = urllib.parse.quote(query)
-        url = f"https://www.bing.com/search?q={encoded}&format=rss"
+        """Bing RSS 搜索"""
+        query_encoded = urllib.parse.quote(query)
+        url = f"https://www.bing.com/search?q={query_encoded}&format=rss"
         
-        xml = self._curl(url)
-        if not xml:
+        content = self._retry_curl(url)
+        if not content:
             return []
         
-        results = []
-        # 解析 <title>...</title> 和 <link>...</link>
-        titles = re.findall(r'<title>([^<]+)</title>', xml)
-        links = re.findall(r'<link>([^<]+)</link>', xml)
-        
-        for i, title in enumerate(titles[1:num+1]):  # 跳过第一个（RSS标题）
-            clean_title = re.sub(r'<[^>]+>', '', title).strip()
-            if not clean_title or clean_title in ['Bing', '搜尋結果']:
-                continue
-            results.append({
-                "title": clean_title,
-                "url": links[i+1] if i+1 < len(links) else ""
-            })
+        results = self._parse_bing_xml(content, num)
+        self.last_source = "bing"
         return results
-    
-    def extract_content(self, url: str, max_chars: int = 500) -> str:
-        """用 Jina AI Reader 提取页面正文"""
-        jina_url = f"https://r.jina.ai/{urllib.parse.quote(url)}"
-        content = self._curl(jina_url, timeout=20)
-        if content:
-            # 去掉 Jina 的元信息头
-            lines = content.split('\n')
-            content_lines = []
-            skip_meta = True
-            for line in lines:
-                if skip_meta and line.startswith('---'):
-                    skip_meta = False
-                    continue
-                if not skip_meta:
-                    content_lines.append(line)
-            text = '\n'.join(content_lines).strip()
-            return text[:max_chars] + ("..." if len(text) > max_chars else "")
-        return "(内容获取失败)"
-    
-    def deep_search(self, query: str, num: int = 5) -> Dict:
-        """
-        深度搜索：搜索 + 内容提取
-        返回结构化结果
-        """
-        print(f"[SearchMaster] 🔍 搜索: {query}", file=sys.stderr)
+
+    def search_jina(self, query: str, num: int = 5) -> List[Dict]:
+        """Jina Reader 搜索（带降级）"""
+        query_encoded = urllib.parse.quote(query)
+        url = f"https://s.jina.ai/{query_encoded}"
+        
+        content = self._retry_curl(url, retries=2)
+        if not content:
+            return self.search_bing(query, num)  # 降级到 Bing
+        
+        try:
+            data = json.loads(content)
+            if data.get('code') == 200 and data.get('data'):
+                results = []
+                for item in data['data'][:num]:
+                    results.append({
+                        "title": item.get('title', ''),
+                        "url": item.get('url', ''),
+                        "description": item.get('content', '')[:100]
+                    })
+                self.last_source = "jina"
+                return results
+        except (json.JSONDecodeError, KeyError):
+            pass
+        
+        # Jina 解析失败，降级
+        return self.search_bing(query, num)
+
+    def search_ddg(self, query: str, num: int = 5) -> List[Dict]:
+        """DuckDuckGo HTML 搜索（备用降级源）"""
+        query_encoded = urllib.parse.quote(query)
+        url = f"https://html.duckduckgo.com/html/?q={query_encoded}"
+        
+        content = self._retry_curl(url)
+        if not content:
+            return []
+        
+        # 解析 DuckDuckGo HTML 结果
+        pattern = r'<a class="result__a" href="([^"]+)"[^>]*>([^<]+)</a>'
+        matches = re.findall(pattern, content)
+        results = []
+        seen_titles = set()
+        for url, title in matches:
+            title = re.sub(r'<[^>]+>', '', title).strip()
+            if title and title not in seen_titles:
+                seen_titles.add(title)
+                results.append({"title": title, "url": url, "description": ''})
+                if len(results) >= num:
+                    break
+        
+        self.last_source = "ddg"
+        return results
+
+    def deep_search(self, query: str, num: int = 5, use_proxy: bool = True) -> List[Dict]:
+        """深度搜索：Jina 优先， Bing 降级，DuckDuckGo 保底"""
+        results = self.search_jina(query, num)
+        if results:
+            return results
         
         results = self.search_bing(query, num)
+        if results:
+            return results
+        
+        return self.search_ddg(query, num)
+
+    def search_and_display(self, query: str, num: int = 5) -> None:
+        """搜索并显示结果"""
+        print(f"🔍 搜索: {query}\n")
+        
+        results = self.deep_search(query, num)
+        
         if not results:
-            return {"query": query, "results": [], "error": "Bing 搜索失败"}
+            print("⚠️ 未找到结果，尝试直接搜索网页...")
+            results = self.search_ddg(query, num)
         
-        print(f"[SearchMaster] ✅ 找到 {len(results)} 条结果，开始提取内容...", file=sys.stderr)
-        
-        output = []
-        for i, r in enumerate(results):
-            print(f"[SearchMaster]   [{i+1}] {r['title'][:60]}...", file=sys.stderr)
-            content = self.extract_content(r['url']) if r['url'] else ""
-            output.append({
-                "title": r['title'],
-                "url": r['url'],
-                "content": content
-            })
-        
-        return {
-            "query": query,
-            "count": len(output),
-            "results": output
-        }
-    
-    def search_and_display(self, query: str, num: int = 5, url_only: bool = False):
-        """搜索并以可读格式输出"""
-        if url_only:
-            results = self.search_bing(query, num)
-            for i, r in enumerate(results):
-                print(f"{i+1}. {r['title']}")
-                print(f"   → {r['url']}")
-            return
-        
-        data = self.deep_search(query, num)
-        print(f"\n{'='*60}")
-        print(f"📋 搜索结果: {data['query']} ({len(data.get('results', []))} 条)")
-        print(f"{'='*60}")
-        
-        for i, r in enumerate(data.get('results', [])):
-            print(f"\n📌 [{i+1}] {r['title']}")
-            print(f"   🔗 {r['url']}")
-            if r['content']:
-                print(f"   📝 {r['content']}")
-        
-        print(f"\n{'='*60}")
+        if results:
+            print(f"📋 找到 {len(results)} 条结果（来源: {self.last_source or 'bing'}）:\n")
+            for i, r in enumerate(results, 1):
+                print(f"  {i}. {r['title']}")
+                print(f"     🔗 {r['url']}")
+                if r.get('description'):
+                    print(f"     📝 {r['description']}...")
+                print()
+        else:
+            print("❌ 搜索失败")
 
-
-if __name__ == "__main__":
+def main():
     import argparse
-    parser = argparse.ArgumentParser(description="Search Master - 小海虾搜索工具")
-    parser.add_argument("query", help="搜索词")
-    parser.add_argument("--num", "-n", type=int, default=5, help="结果数量")
-    parser.add_argument("--url-only", "-u", action="store_true", help="只显示URL")
-    parser.add_argument("--json", "-j", action="store_true", help="JSON格式输出")
-    parser.add_argument("--proxy", "-p", default=PROXY, help="代理地址")
+    parser = argparse.ArgumentParser(description="搜索工具 v3.0（修复版）")
+    parser.add_argument("query", nargs="?", help="搜索关键词")
+    parser.add_argument("-n", "--num", type=int, default=5, help="结果数量 (默认5)")
+    parser.add_argument("-j", "--json", action="store_true", help="JSON格式输出")
+    parser.add_argument("-p", "--proxy", default="auto", 
+                       help="代理设置: auto/none/具体URL (默认auto)")
     
     args = parser.parse_args()
+    
+    if not args.query:
+        parser.print_help()
+        return
     
     searcher = SearchMaster(proxy=args.proxy)
     
     if args.json:
-        result = searcher.deep_search(args.query, args.num)
-        print(json.dumps(result, ensure_ascii=False, indent=2))
+        results = searcher.deep_search(args.query, args.num)
+        print(json.dumps(results, ensure_ascii=False, indent=2))
     else:
-        searcher.search_and_display(args.query, args.num, args.url_only)
+        searcher.search_and_display(args.query, args.num)
+
+if __name__ == "__main__":
+    main()
