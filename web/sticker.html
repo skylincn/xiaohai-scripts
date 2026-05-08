@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSC·幻天屿 Sticker</title>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        /* 页面特定样式 */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .header-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+        
+        /* Tab 导航 */
+        .tab-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tab-nav button {
+            padding: 10px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab-nav button.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+        
+        /* 尺寸选择 */
+        .size-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .size-tabs button {
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        
+        .size-tabs button.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+        
+        /* 表情格子 */
+        .sticker-grid {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .sticker-grid.size-4 { grid-template-columns: repeat(2, 1fr); }
+        .sticker-grid.size-8 { grid-template-columns: repeat(4, 1fr); }
+        .sticker-grid.size-9 { grid-template-columns: repeat(3, 1fr); }
+        .sticker-grid.size-16 { grid-template-columns: repeat(4, 1fr); }
+        
+        .sticker-cell {
+            aspect-ratio: 1;
+            background: var(--bg-secondary);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        
+        .sticker-cell:hover {
+            border-color: var(--accent);
+            transform: scale(1.02);
+        }
+        
+        .sticker-cell.has-image {
+            border-style: solid;
+            border-color: var(--success);
+        }
+        
+        .cell-num {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(0,0,0,0.6);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .cell-placeholder {
+            font-size: 32px;
+            color: var(--text-secondary);
+        }
+        
+        .cell-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .cell-actions {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            display: flex;
+            gap: 4px;
+        }
+        
+        .cell-actions button {
+            background: rgba(0,0,0,0.7);
+            border: none;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        /* 文字编辑面板 */
+        .text-edit-panel {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 16px;
+            display: none;
+        }
+        
+        .text-edit-panel.active {
+            display: block;
+        }
+        
+        .text-edit-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .text-edit-row label {
+            min-width: 80px;
+            color: var(--text-secondary);
+        }
+        
+        .text-edit-row input[type="text"],
+        .text-edit-row input[type="color"] {
+            flex: 1;
+            padding: 8px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+        }
+        
+        .text-edit-row input[type="range"] {
+            flex: 1;
+        }
+        
+        /* 导出网格 */
+        .export-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .export-item {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            overflow: hidden;
+            text-align: center;
+        }
+        
+        .export-item img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+        }
+        
+        .export-label {
+            padding: 8px;
+            font-size: 12px;
+        }
+        
+        .export-size {
+            font-size: 10px;
+            color: var(--text-secondary);
+            padding-bottom: 8px;
+        }
+        
+        /* 响应式 */
+        @media (max-width: 600px) {
+            .sticker-grid.size-8,
+            .sticker-grid.size-16 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录覆盖层 -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <h2>🔐 MSC·幻天屿</h2>
+            <input type="text" id="loginUser" placeholder="用户名" autocomplete="username">
+            <input type="password" id="loginPass" placeholder="密码" autocomplete="current-password">
+            <button onclick="doLogin()">登录</button>
+            <div class="login-error" id="loginError">用户名或密码错误</div>
+        </div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="container">
+        <div class="header">
+            <h1>🎭 表情包生成器</h1>
+            <div class="header-actions">
+                <button class="header-btn" onclick="location.href='image.html'" title="图片生成">🎨</button>
+                <button class="header-btn" onclick="toggleSettings()" title="设置">⚙️</button>
+            </div>
+        </div>
+
+        <!-- 设置面板 -->
+        <div class="card" id="settingsPanel" style="display:none;">
+            <div class="card-title">⚙️ API 设置</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>API Key</label>
+                    <input type="password" id="apiKey" placeholder="输入 API Key">
+                </div>
+                <div class="form-group">
+                    <label>Base URL</label>
+                    <input type="text" id="baseUrl" value="https://api.apiyi.com/v1">
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 导航 -->
+        <div class="tab-nav">
+            <button class="active" data-tab="generate">🎨 批量生成</button>
+            <button data-tab="style">🖼 风格转换</button>
+            <button data-tab="text">✏️ 文字编辑</button>
+            <button data-tab="export">📦 导出</button>
+        </div>
+
+        <!-- 批量生成 -->
+        <div class="card" id="tab-generate">
+            <div class="card-title"><span class="icon">🎨</span> 批量生成</div>
+            
+            <div class="size-tabs">
+                <button data-size="4">4格</button>
+                <button data-size="8" class="active">8格</button>
+                <button data-size="9">9格</button>
+                <button data-size="16">16格</button>
+            </div>
+            
+            <div class="form-group">
+                <label>主形象描述</label>
+                <input type="text" id="mainPrompt" placeholder="如：一只可爱的小白兔，圆滚滚的身体">
+            </div>
+            
+            <div class="form-group">
+                <label>表情列表（逗号分隔）</label>
+                <input type="text" id="expressionPrompt" placeholder="如：开心,生气,哭泣,惊讶,害羞,睡觉,吃瓜,疑惑">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>风格</label>
+                    <select id="styleSelect">
+                        <option value="可爱卡通">可爱卡通</option>
+                        <option value="简约线条">简约线条</option>
+                        <option value="像素风">像素风</option>
+                        <option value="水彩风">水彩风</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>背景</label>
+                    <select id="bgSelect">
+                        <option value="透明背景">透明背景</option>
+                        <option value="白色背景">白色背景</option>
+                        <option value="渐变背景">渐变背景</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button class="btn" onclick="generateAll()">🚀 开始生成</button>
+        </div>
+
+        <!-- 风格转换 -->
+        <div class="card" id="tab-style" style="display:none;">
+            <div class="card-title"><span class="icon">🖼</span> 风格转换</div>
+            <div class="form-group">
+                <label>上传图片</label>
+                <input type="file" id="styleImage" accept="image/*" onchange="handleStyleUpload(event)">
+            </div>
+            <div id="stylePreview" style="display:none;margin:12px 0;">
+                <img id="stylePreviewImg" style="max-width:200px;border-radius:8px;">
+            </div>
+            <div class="form-group">
+                <label>转换提示词</label>
+                <input type="text" id="stylePrompt" value="转换为卡通表情风格，透明背景，高质量">
+            </div>
+            <button class="btn" onclick="convertStyle()">🔄 转换</button>
+        </div>
+
+        <!-- 文字编辑 -->
+        <div class="card" id="tab-text" style="display:none;">
+            <div class="card-title"><span class="icon">✏️</span> 文字编辑</div>
+            <p style="font-size:12px;color:#666;margin-bottom:12px;">点击表情格子添加文字</p>
+            <div class="sticker-grid size-8" id="textEditGrid"></div>
+            <div class="text-edit-panel" id="textEditPanel">
+                <div class="card-title">编辑第 <span id="editCellNum">1</span> 格</div>
+                <div class="text-edit-row">
+                    <label>文字:</label>
+                    <input type="text" id="editText" placeholder="输入文字">
+                </div>
+                <div class="text-edit-row">
+                    <label>字体大小:</label>
+                    <input type="range" id="editFontSize" min="10" max="40" value="20">
+                    <span id="fontSizeVal">20px</span>
+                </div>
+                <div class="text-edit-row">
+                    <label>颜色:</label>
+                    <input type="color" id="editColor" value="#ffffff">
+                </div>
+                <div style="display:flex;gap:8px;margin-top:12px;">
+                    <button class="btn" onclick="applyText()">✅ 应用</button>
+                    <button class="btn btn-outline" onclick="closeTextEdit()">取消</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 导出 -->
+        <div class="card" id="tab-export" style="display:none;">
+            <div class="card-title"><span class="icon">📦</span> 导出预览</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>表情包名称(4字)</label>
+                    <input type="text" id="packName" placeholder="萌兔" maxlength="4">
+                </div>
+                <div class="form-group">
+                    <label>表情名称(8字)</label>
+                    <input type="text" id="stickerName" placeholder="可爱小兔子" maxlength="8">
+                </div>
+            </div>
+            <button class="btn" onclick="generateAllExport()">📦 生成导出图片</button>
+            <div class="export-grid" id="exportGrid"></div>
+            <div class="log-area" id="exportLog"></div>
+        </div>
+
+        <!-- 表情预览 -->
+        <div class="card">
+            <div class="card-title"><span class="icon">👁</span> 表情预览</div>
+            <div class="sticker-grid size-8" id="stickerGrid"></div>
+        </div>
+    </div>
+
+    <!-- 加载动画 -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div id="loadingText">生成中...</div>
+        <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    </div>
+
+    <!-- 大图预览 -->
+    <div class="modal-overlay hidden" id="imageModal" onclick="closeModal()">
+        <button class="close-btn">✕</button>
+        <img id="modalImg" src="" alt="大图">
+    </div>
+
+    <!-- 引入公共认证模块 -->
+    <script src="auth.js"></script>
+    <script>
+        let currentSize = 8;
+        let stickers = {};
+        let editingIndex = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTabs();
+            initSizeTabs();
+            initGrid();
+            initFontSlider();
+            loadSettings();
+        });
+
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function toggleKey() {
+            const input = document.getElementById('apiKey');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        function loadSettings() {
+            const savedKey = localStorage.getItem('msc_api_key');
+            const savedUrl = localStorage.getItem('msc_base_url');
+            if (savedKey) document.getElementById('apiKey').value = savedKey;
+            if (savedUrl) document.getElementById('baseUrl').value = savedUrl;
+        }
+
+        // 保存设置
+        document.getElementById('apiKey')?.addEventListener('change', (e) => {
+            localStorage.setItem('msc_api_key', e.target.value);
+        });
+        document.getElementById('baseUrl')?.addEventListener('change', (e) => {
+            localStorage.setItem('msc_base_url', e.target.value);
+        });
+
+        function initTabs() {
+            document.querySelectorAll('.tab-nav button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const tab = btn.dataset.tab;
+                    ['generate', 'style', 'text', 'export'].forEach(t => {
+                        const el = document.getElementById('tab-' + t);
+                        if (el) el.style.display = t === tab ? 'block' : 'none';
+                    });
+                });
+            });
+        }
+
+        function initSizeTabs() {
+            document.querySelectorAll('.size-tabs button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.size-tabs button').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentSize = parseInt(btn.dataset.size);
+                    initGrid();
+                });
+            });
+        }
+
+        function initGrid() {
+            const grid = document.getElementById('stickerGrid');
+            const textGrid = document.getElementById('textEditGrid');
+            grid.className = 'sticker-grid size-' + currentSize;
+            textGrid.className = 'sticker-grid size-' + currentSize;
+            grid.innerHTML = '';
+            textGrid.innerHTML = '';
+
+            for (let i = 1; i <= currentSize; i++) {
+                grid.appendChild(createCell(i));
+                textGrid.appendChild(createTextCell(i));
+            }
+        }
+
+        function createCell(index) {
+            const cell = document.createElement('div');
+            cell.className = 'sticker-cell';
+            cell.dataset.index = index;
+            cell.innerHTML = `<span class="cell-num">${String(index).padStart(2, '0')}</span><span class="cell-placeholder">+</span>`;
+            cell.addEventListener('click', () => selectCell(index));
+            return cell;
+        }
+
+        function createTextCell(index) {
+            const cell = document.createElement('div');
+            cell.className = 'sticker-cell';
+            cell.dataset.index = index;
+            const data = stickers[index];
+            if (data && data.image) {
+                cell.classList.add('has-image');
+                cell.innerHTML = `<span class="cell-num">${String(index).padStart(2, '0')}</span><span class="cell-placeholder">✏️</span>`;
+            } else {
+                cell.innerHTML = `<span class="cell-num">${String(index).padStart(2, '0')}</span><span class="cell-placeholder">+</span>`;
+            }
+            cell.addEventListener('click', () => openTextEdit(index));
+            return cell;
+        }
+
+        function selectCell(index) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => handleImageUpload(e, index);
+            input.click();
+        }
+
+        function handleImageUpload(event, index) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                stickers[index] = { ...stickers[index], image: e.target.result, text: '', textStyle: {} };
+                updateCell(index);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateCell(index) {
+            const grid = document.getElementById('stickerGrid');
+            const cell = grid.children[index - 1];
+            const data = stickers[index];
+            if (data && data.image) {
+                cell.classList.add('has-image');
+                cell.innerHTML = `
+                    <span class="cell-num">${String(index).padStart(2, '0')}</span>
+                    <img class="cell-img" src="${data.image}" alt="表情${index}" onclick="showModal('${data.image}')">
+                    <div class="cell-actions">
+                        <button onclick="event.stopPropagation(); deleteCell(${index})">🗑️</button>
+                    </div>`;
+            } else {
+                cell.classList.remove('has-image');
+                cell.innerHTML = `<span class="cell-num">${String(index).padStart(2, '0')}</span><span class="cell-placeholder">+</span>`;
+            }
+        }
+
+        function deleteCell(index) {
+            delete stickers[index];
+            updateCell(index);
+            updateTextEditGrid();
+        }
+
+        function initFontSlider() {
+            const slider = document.getElementById('editFontSize');
+            slider.addEventListener('input', () => {
+                document.getElementById('fontSizeVal').textContent = slider.value + 'px';
+            });
+        }
+
+        function openTextEdit(index) {
+            if (!stickers[index] || !stickers[index].image) {
+                alert('请先生成或上传图片');
+                return;
+            }
+            editingIndex = index;
+            document.getElementById('editCellNum').textContent = index;
+            const data = stickers[index] || {};
+            document.getElementById('editText').value = data.text || '';
+            document.getElementById('editFontSize').value = data.textStyle?.fontSize || 20;
+            document.getElementById('editColor').value = data.textStyle?.color || '#ffffff';
+            document.getElementById('fontSizeVal').textContent = (data.textStyle?.fontSize || 20) + 'px';
+            document.getElementById('textEditPanel').classList.add('active');
+        }
+
+        function applyText() {
+            const text = document.getElementById('editText').value;
+            const fontSize = document.getElementById('editFontSize').value;
+            const color = document.getElementById('editColor').value;
+            stickers[editingIndex] = { ...stickers[editingIndex], text, textStyle: { fontSize, color } };
+            updateTextEditGrid();
+            closeTextEdit();
+            log('success', `第${editingIndex}格已添加文字: ${text}`);
+        }
+
+        function closeTextEdit() {
+            document.getElementById('textEditPanel').classList.remove('active');
+            editingIndex = null;
+        }
+
+        function updateTextEditGrid() {
+            const grid = document.getElementById('textEditGrid');
+            for (let i = 1; i <= currentSize; i++) {
+                const cell = grid.children[i - 1];
+                const data = stickers[i];
+                if (data && data.text) {
+                    cell.classList.add('has-image');
+                    cell.innerHTML = `<span class="cell-num">${String(i).padStart(2, '0')}</span><span class="cell-placeholder">✏️</span>`;
+                } else {
+                    cell.classList.remove('has-image');
+                    cell.innerHTML = `<span class="cell-num">${String(i).padStart(2, '0')}</span><span class="cell-placeholder">+</span>`;
+                }
+            }
+        }
+
+        function showModal(src) {
+            document.getElementById('modalImg').src = src;
+            document.getElementById('imageModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').classList.add('hidden');
+        }
+
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+
+        function updateProgress(pct) {
+            document.getElementById('progressBar').style.width = pct + '%';
+        }
+
+        function log(type, msg) {
+            const logEl = document.getElementById('exportLog');
+            const line = document.createElement('div');
+            line.className = 'log-line ' + type;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            logEl.appendChild(line);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        async function generateAll() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const baseUrl = document.getElementById('baseUrl').value.replace(/\/$/, '');
+            const mainPrompt = document.getElementById('mainPrompt').value.trim();
+            const expressionPrompt = document.getElementById('expressionPrompt').value.trim();
+            const style = document.getElementById('styleSelect').value;
+            const bg = document.getElementById('bgSelect').value;
+
+            if (!mainPrompt) { alert('请输入主形象描述'); return; }
+            if (!expressionPrompt) { alert('请输入表情列表'); return; }
+            if (!apiKey) { alert('请先填写 API Key'); return; }
+
+            const expressions = expressionPrompt.split(/[,，]/).map(e => e.trim()).filter(e => e);
+            const count = Math.min(expressions.length, currentSize);
+
+            if (!confirm(`将生成 ${count} 张表情，继续吗？`)) return;
+
+            showLoading('正在生成...');
+            log('info', `开始生成 ${count} 张表情`);
+
+            for (let i = 0; i < count; i++) {
+                const prompt = `${mainPrompt}，${expressions[i]}，${style}风格，${bg}，微信表情包风格`;
+                updateProgress((i / count) * 100);
+                document.getElementById('loadingText').textContent = `正在生成第 ${i+1}/${count} 张...`;
+                
+                try {
+                    const img = await callAPI(baseUrl, apiKey, prompt);
+                    stickers[i + 1] = { image: img, text: '', textStyle: {} };
+                    updateCell(i + 1);
+                    log('success', `第${i+1}张完成`);
+                } catch (err) {
+                    log('error', `第${i+1}张失败: ${err.message}`);
+                }
+            }
+
+            updateProgress(100);
+            hideLoading();
+            log('success', '全部生成完成！');
+        }
+
+        async function callAPI(baseUrl, apiKey, prompt) {
+            const response = await fetch(`${baseUrl}/images/generations`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                body: JSON.stringify({ model: 'gpt-image-2-all', prompt: prompt })
+            });
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error(err);
+            }
+            const data = await response.json();
+            if (data.data && data.data[0]) {
+                const imgData = data.data[0];
+                if (imgData.url) {
+                    const resp = await fetch(imgData.url);
+                    const blob = await resp.blob();
+                    return new Promise(resolve => {
+                        const reader = new FileReader();
+                        reader.onload = e => resolve(e.target.result);
+                        reader.readAsDataURL(blob);
+                    });
+                } else if (imgData.b64_json) {
+                    return `data:image/png;base64,${imgData.b64_json}`;
+                }
+            }
+            throw new Error('API响应无效');
+        }
+
+        function handleStyleUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('stylePreviewImg').src = e.target.result;
+                document.getElementById('stylePreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function convertStyle() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const baseUrl = document.getElementById('baseUrl').value.replace(/\/$/, '');
+            const img = document.getElementById('stylePreviewImg').src;
+            const userPrompt = document.getElementById('stylePrompt').value.trim() || '转换为卡通表情风格，透明背景，高质量';
+            
+            if (!apiKey) { alert('请先填写 API Key'); return; }
+            
+            showLoading('正在生成...');
+            try {
+                const response = await fetch(`${baseUrl}/images/edits`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                    body: JSON.stringify({
+                        model: 'gpt-image-2-all',
+                        prompt: userPrompt,
+                        image: img.split(',')[1]
+                    })
+                });
+                if (!response.ok) throw new Error(await response.text());
+                const data = await response.json();
+                if (data.data && data.data[0] && data.data[0].b64_json) {
+                    const result = `data:image/png;base64,${data.data[0].b64_json}`;
+                    stickers[1] = { image: result, text: '', textStyle: {} };
+                    updateCell(1);
+                    log('success', '风格转换成功');
+                }
+            } catch (err) {
+                log('error', '转换失败: ' + err.message);
+            }
+            hideLoading();
+        }
+
+        /**
+         * 修复：createThumbnail 改为 async 函数
+         */
+        async function createThumbnail(base64, width, height) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = () => resolve(''); // 错误时返回空
+                img.src = base64;
+            });
+        }
+
+        /**
+         * 修复：generateAllExport 改为 async 函数，正确 await createThumbnail
+         */
+        async function generateAllExport() {
+            const grid = document.getElementById('exportGrid');
+            grid.innerHTML = '';
+            log('info', '生成导出预览...');
+
+            for (let i = 1; i <= currentSize; i++) {
+                const data = stickers[i];
+                const item = document.createElement('div');
+                item.className = 'export-item';
+
+                if (data && data.image) {
+                    // 正确 await 异步函数
+                    const thumb = await createThumbnail(data.image, 120, 120);
+                    item.innerHTML = `
+                        <img src="${thumb}" alt="缩略图${i}">
+                        <div class="export-label">缩略图 ${String(i).padStart(2, '0')}</div>
+                        <div class="export-size">120×120 PNG</div>
+                    `;
+                } else {
+                    item.innerHTML = `
+                        <div style="width:100%;aspect-ratio:1;background:#2d2d2d;display:flex;align-items:center;justify-content:center;color:#666;font-size:24px;">?</div>
+                        <div class="export-label">缩略图 ${String(i).padStart(2, '0')}</div>
+                        <div class="export-size">未生成</div>
+                    `;
+                }
+                grid.appendChild(item);
+            }
+            log('success', '预览生成完成');
+        }
+    </script>
+</body>
+</html>

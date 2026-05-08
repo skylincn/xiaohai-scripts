@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSC·幻天屿 Image</title>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        /* 页面特定样式 */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .settings-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+        
+        .settings-panel {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .settings-panel.active {
+            display: block;
+        }
+        
+        .api-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .api-row input {
+            flex: 1;
+        }
+        
+        .toggle-visibility {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .options-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        
+        .count-btns {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .count-btn {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .count-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+        
+        .prompt-area {
+            width: 100%;
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .result-area {
+            margin-top: 20px;
+        }
+        
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        
+        .result-item {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .result-item:hover {
+            transform: scale(1.02);
+        }
+        
+        .result-item img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+        }
+        
+        .result-item .info {
+            padding: 12px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        /* 移动端适配 */
+        @media (max-width: 600px) {
+            .header {
+                flex-direction: column;
+                gap: 16px;
+            }
+            
+            .options-row {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录覆盖层 -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <h2>🔐 MSC·幻天屿</h2>
+            <input type="text" id="loginUser" placeholder="用户名" autocomplete="username">
+            <input type="password" id="loginPass" placeholder="密码" autocomplete="current-password">
+            <button onclick="doLogin()">登录</button>
+            <div class="login-error" id="loginError">用户名或密码错误</div>
+        </div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="container">
+        <div class="header">
+            <h1>MSC·幻天屿</h1>
+            <div class="header-actions">
+                <button class="settings-btn" onclick="toggleSettings()" title="设置">⚙️</button>
+                <button class="settings-btn" onclick="location.href='sticker.html'" title="表情包">🎭</button>
+            </div>
+        </div>
+
+        <!-- 设置面板 -->
+        <div class="settings-panel" id="settingsPanel">
+            <div class="card-title">⚙️ API 设置</div>
+            <div class="api-row">
+                <input type="password" id="apiKey" placeholder="API Key">
+                <button class="toggle-visibility" onclick="toggleKey()">👁</button>
+            </div>
+            <input type="text" id="baseUrl" placeholder="Base URL" value="https://api.apiyi.com/v1" style="margin-top:12px;">
+            
+            <div class="options-row">
+                <div class="form-group">
+                    <label>模型</label>
+                    <select id="modelSelect">
+                        <option value="gpt-image-2-all">gpt-image-2-all</option>
+                        <option value="gpt-image-2-vip">gpt-image-2-vip</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>图片数量</label>
+                    <div class="count-btns">
+                        <button class="count-btn" onclick="setCount(1)">1</button>
+                        <button class="count-btn active" onclick="setCount(2)">2</button>
+                        <button class="count-btn" onclick="setCount(4)">4</button>
+                        <button class="count-btn" onclick="setCount(6)">6</button>
+                        <button class="count-btn" onclick="setCount(8)">8</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>质量</label>
+                    <select id="qualitySelect">
+                        <option value="standard">standard</option>
+                        <option value="hd">hd</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>尺寸</label>
+                    <select id="sizeSelect">
+                        <option value="1024x1024">1024×1024</option>
+                        <option value="1536x1024">1536×1024</option>
+                        <option value="1024x1536">1024×1536</option>
+                        <option value="2048x2048">2048×2048</option>
+                        <option value="2048x1152">2048×1152</option>
+                        <option value="1920x1080">横版16:9</option>
+                        <option value="1080x1920">竖屏9:16</option>
+                        <option value="1024x768">4:3</option>
+                        <option value="768x1024">3:4</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主卡片 -->
+        <div class="card">
+            <div class="card-title"><span class="icon">🎨</span> 图片生成</div>
+            
+            <div class="form-group">
+                <label>参考图（可选，图生图）</label>
+                <input type="file" id="refImage" accept="image/*" onchange="previewRefImage(event)">
+                <div id="refPreview" style="margin-top:12px;display:none;">
+                    <img id="refPreviewImg" style="max-width:200px;border-radius:8px;">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>描述你想要生成的图片...</label>
+                <textarea class="prompt-area" id="prompt" placeholder="详细描述你想要的图片内容、风格、氛围等..."></textarea>
+            </div>
+            
+            <div class="actions">
+                <button class="btn" onclick="generateImages()">🎨 生成</button>
+                <button class="btn btn-outline" onclick="resetForm()">🔄 重置</button>
+            </div>
+        </div>
+
+        <!-- 结果区域 -->
+        <div class="result-area" id="resultArea" style="display:none;">
+            <div class="card">
+                <div class="card-title"><span class="icon">🖼</span> 生成结果</div>
+                <div class="result-grid" id="resultGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载动画 -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div id="loadingText">生成中...</div>
+        <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    </div>
+
+    <!-- 大图预览 -->
+    <div class="modal-overlay hidden" id="imageModal" onclick="closeModal()">
+        <button class="close-btn">✕</button>
+        <img id="modalImg" src="" alt="大图">
+    </div>
+
+    <!-- 引入公共认证模块 -->
+    <script src="auth.js"></script>
+    <script>
+        let currentCount = 2;
+        let generatedImages = [];
+
+        function toggleSettings() {
+            document.getElementById('settingsPanel').classList.toggle('active');
+        }
+
+        function toggleKey() {
+            const input = document.getElementById('apiKey');
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        function setCount(n) {
+            currentCount = n;
+            document.querySelectorAll('.count-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent == n);
+            });
+        }
+
+        function previewRefImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('refPreviewImg').src = e.target.result;
+                    document.getElementById('refPreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('prompt').value = '';
+            document.getElementById('refImage').value = '';
+            document.getElementById('refPreview').style.display = 'none';
+            document.getElementById('resultArea').style.display = 'none';
+            generatedImages = [];
+        }
+
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+
+        function updateProgress(pct) {
+            document.getElementById('progressBar').style.width = pct + '%';
+        }
+
+        function showModal(src) {
+            document.getElementById('modalImg').src = src;
+            document.getElementById('imageModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').classList.add('hidden');
+        }
+
+        async function generateImages() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const baseUrl = document.getElementById('baseUrl').value.replace(/\/$/, '');
+            const prompt = document.getElementById('prompt').value.trim();
+            const model = document.getElementById('modelSelect').value;
+            const quality = document.getElementById('qualitySelect').value;
+            const size = document.getElementById('sizeSelect').value;
+            const refFile = document.getElementById('refImage').files[0];
+
+            if (!prompt) {
+                alert('请输入图片描述');
+                return;
+            }
+
+            if (!apiKey) {
+                alert('请先在设置中填写 API Key');
+                document.getElementById('settingsPanel').classList.add('active');
+                return;
+            }
+
+            showLoading('正在生成...');
+            updateProgress(0);
+
+            const results = [];
+            const grid = document.getElementById('resultGrid');
+            grid.innerHTML = '';
+
+            for (let i = 0; i < currentCount; i++) {
+                updateProgress((i / currentCount) * 100);
+                document.getElementById('loadingText').textContent = `正在生成第 ${i + 1}/${currentCount} 张...`;
+
+                try {
+                    const imageData = await callAPI(baseUrl, apiKey, {
+                        prompt,
+                        model,
+                        quality,
+                        size,
+                        refImage: refFile && i === 0 ? await fileToBase64(refFile) : null
+                    });
+
+                    if (imageData) {
+                        results.push(imageData);
+                        addResultItem(imageData, i + 1);
+                    }
+                } catch (err) {
+                    console.error(`第${i + 1}张生成失败:`, err);
+                    addErrorItem(i + 1, err.message);
+                }
+            }
+
+            generatedImages = results;
+            updateProgress(100);
+            hideLoading();
+            document.getElementById('resultArea').style.display = 'block';
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result.split(',')[1]);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function callAPI(baseUrl, apiKey, params) {
+            const body = {
+                model: params.model,
+                prompt: params.prompt,
+                quality: params.quality,
+                size: params.size,
+                n: 1
+            };
+
+            // 图生图
+            if (params.refImage) {
+                body.image = params.refImage;
+            }
+
+            const response = await fetch(`${baseUrl}/images/generations`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (!response.ok) {
+                const err = await response.text();
+                throw new Error(err);
+            }
+
+            const data = await response.json();
+
+            if (data.data && data.data[0]) {
+                const imgData = data.data[0];
+                
+                // 处理 URL 返回
+                if (imgData.url) {
+                    const resp = await fetch(imgData.url);
+                    const blob = await resp.blob();
+                    return new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve({
+                            url: e.target.result,
+                            isBase64: true
+                        });
+                        reader.readAsDataURL(blob);
+                    });
+                }
+                
+                // 处理 base64 返回
+                if (imgData.b64_json) {
+                    return {
+                        url: `data:image/png;base64,${imgData.b64_json}`,
+                        isBase64: true
+                    };
+                }
+            }
+
+            throw new Error('API 响应无效');
+        }
+
+        function addResultItem(imageData, index) {
+            const grid = document.getElementById('resultGrid');
+            const item = document.createElement('div');
+            item.className = 'result-item';
+            item.innerHTML = `
+                <img src="${imageData.url}" alt="生成图片 ${index}" onclick="showModal('${imageData.url}')">
+                <div class="info">
+                    <div>图片 ${index}</div>
+                    <a href="${imageData.url}" download="image_${index}.png" onclick="event.stopPropagation()">📥 下载</a>
+                </div>
+            `;
+            grid.appendChild(item);
+        }
+
+        function addErrorItem(index, message) {
+            const grid = document.getElementById('resultGrid');
+            const item = document.createElement('div');
+            item.className = 'result-item';
+            item.style.background = 'var(--error)';
+            item.style.opacity = '0.5';
+            item.innerHTML = `
+                <div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;">
+                    <div>
+                        <div style="font-size:24px;margin-bottom:8px;">❌</div>
+                        <div>图片 ${index} 生成失败</div>
+                        <div style="font-size:10px;margin-top:4px;opacity:0.7;">${message.substring(0, 50)}</div>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(item);
+        }
+
+        // 从 localStorage 恢复设置
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedKey = localStorage.getItem('msc_api_key');
+            const savedUrl = localStorage.getItem('msc_base_url');
+            if (savedKey) document.getElementById('apiKey').value = savedKey;
+            if (savedUrl) document.getElementById('baseUrl').value = savedUrl;
+        });
+
+        // 保存设置到 localStorage
+        document.getElementById('apiKey')?.addEventListener('change', (e) => {
+            localStorage.setItem('msc_api_key', e.target.value);
+        });
+        document.getElementById('baseUrl')?.addEventListener('change', (e) => {
+            localStorage.setItem('msc_base_url', e.target.value);
+        });
+    </script>
+</body>
+</html>
